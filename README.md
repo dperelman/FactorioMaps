@@ -6,10 +6,10 @@ Mod portal link: https://mods.factorio.com/mod/L0laapk3_FactorioMaps
 
 # How to Install
 **Note that this program now only runs on 64 bit python version 3.6 or higher.**
-1. Download FactorioMaps to `%appdata%\mods\`, either from the [mod portal](https://mods.factorio.com/mod/L0laapk3_FactorioMaps) (The mod does not need to be enabled to work) and then unzipping it, or from [the github releases page](https://github.com/L0laapk3/FactorioMaps/releases). 
-1. Install the latest version of [**64 bit** python 3](https://www.python.org/downloads/). (Do *not* install python 2.)  
+1. Download FactorioMaps to `%appdata%\mods\`, either from the [mod portal](https://mods.factorio.com/mod/L0laapk3_FactorioMaps) (The mod does not need to be enabled to work) and then unzipping it, or from [the github releases page](https://github.com/L0laapk3/FactorioMaps/releases).
+1. Install the latest version of [**64 bit** python 3](https://www.python.org/downloads/). (Do *not* install python 2.)
 Make sure to do a select the "add python to PATH" and "install pip" options.
-1. Inside the factoriomaps folder, install the required pip packages: `python -m pip install -r packages.txt`.
+1. Inside the factoriomaps folder, install the required pip packages: `python -m pip install -r requirements.txt`.
 
 # How to Use
 1. Make sure you close factorio before starting the process.
@@ -61,11 +61,12 @@ Heres a list of flags that `auto.py` can accept:
 | `--delete` | Deletes the output folder specified before running the script. |
 | `--dry` | Skips starting factorio, making screenshots and doing the main steps, only execute setting up and finishing of script. |
 | `--force-lib-update` | Forces an update of the web dependencies. |
- 
+| `--temp-dir` | Use a custom temporary directory. |
+
 Image quality settings can be changed in the top of `zoom.py`.
 
 # Result folder estimates
-You can expect the resulting folders to take up approx. (very rough estimate) 15 times the savefile size per timestamp per daytime for day images and 10 times for night images. The intermediate total disk usage will be much higher, 10 times the final result or more. If this is a problem for you, go put a +1 on [#46](https://github.com/L0laapk3/FactorioMaps/issues/46).  
+You can expect the resulting folders to take up approx. (very rough estimate) 15 times the savefile size per timestamp per daytime for day images and 10 times for night images. The intermediate total disk usage will be much higher, 10 times the final result or more. If this is a problem for you, go put a +1 on [#46](https://github.com/L0laapk3/FactorioMaps/issues/46).
 Of course the processing time depends very heavely on your system specs, but a rough estimate is an hour per timestamp per daytime per 50 MB of savefile.
 
 # Hosting this on a server
