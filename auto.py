@@ -11,11 +11,11 @@ from pkg_resources import DistributionNotFound, VersionConflict
 from pathlib import Path
 
 try:
-	with Path(__file__, "..", "packages.txt").resolve().open("r", encoding="utf-8") as f:
+	with Path(__file__, "..", "requirements.txt").resolve().open("r", encoding="utf-8") as f:
 		pkg_resources.require(f.read().splitlines())
 except (DistributionNotFound, VersionConflict) as ex:
 	traceback.print_exc()
-	print("\nDependencies not met. Run `pip install -r packages.txt` to install missing dependencies.")
+	print("\nDependencies not met. Run `pip install -r requirements.txt` to install missing dependencies.")
 	sys.exit(1)
 
 import glob
@@ -23,6 +23,7 @@ import argparse
 import configparser
 import datetime
 import json
+import errno
 import math
 import multiprocessing as mp
 import random
@@ -55,9 +56,9 @@ from zoom import zoom, zoomRenderboxes
 
 userFolder = Path(__file__, "..", "..", "..").resolve()
 
-def naturalSort(l): 
-	convert = lambda text: int(text) if text.isdigit() else text.lower() 
-	alphanum_key = lambda key: [ convert(c) for c in re.split('(\d+)', key) ] 
+def naturalSort(l):
+	convert = lambda text: int(text) if text.isdigit() else text.lower()
+	alphanum_key = lambda key: [ convert(c) for c in re.split('(\d+)', key) ]
 	return sorted(l, key = alphanum_key)
 
 def printErase(arg):
@@ -79,7 +80,10 @@ def startGameAndReadGameLogs(results, condition, exeWithArgs, isSteam, tmpDir, p
 	prevPrinted = False
 	def handleGameLine(line, isFirst):
 		if isFirst and not re.match(r'^ *\d+\.\d{3} \d{4}-\d\d-\d\d \d\d:\d\d:\d\d; Factorio (\d+\.\d+\.\d+) \(build (\d+), [^)]+\)$', line):
-			raise Exception("Unrecognised output from factorio (maybe your version is outdated or too new?)\n\nOutput from factorio:\n" + line)
+			suggestion = "maybe your version is outdated or too new?"
+			if line.endswith('Error Util.cpp:83: weakly_canonical: Incorrect function.'):
+				suggestion = "maybe your temp directory is on a ramdisk?"
+			raise RuntimeError(f"Unrecognised output from factorio ({suggestion})\n\nOutput from factorio:\n{line}")
 
 		nonlocal prevPrinted
 		line = line.rstrip('\n')
@@ -89,7 +93,7 @@ def startGameAndReadGameLogs(results, condition, exeWithArgs, isSteam, tmpDir, p
 			return
 
 		prevPrinted = False
-	
+
 		m = re.match(r'^\ *\d+(?:\.\d+)? *Script *@__L0laapk3_FactorioMaps__\/data-final-fixes\.lua:\d+: FactorioMaps_Output_RawTagPaths:([^:]+):(.*)$', line, re.IGNORECASE)
 		if m is not None:
 			rawTags[m.group(1)] = m.group(2)
@@ -114,10 +118,10 @@ def startGameAndReadGameLogs(results, condition, exeWithArgs, isSteam, tmpDir, p
 
 
 	with os.fdopen(pipeOut, 'r') as pipef:
-		
+
 		if isSteam:
 			printErase("using steam launch hack.")
-			
+
 			attrs = ('pid', 'name', 'create_time')
 
 			# on some devices, the previous check wasn't enough apparently, so explicitely wait until the log file is created.
@@ -404,6 +408,7 @@ def auto(*args):
 	parser.add_argument("targetname", nargs="?", help="output folder name for the generated snapshots.")
 	parser.add_argument("savename", nargs="*", help="Names of the savegames to generate snapshots from. If no savegames are provided the latest save or the save matching outfolder will be gerated. Glob patterns are supported.")
 	parser.add_argument("--force-lib-update", action="store_true", help="Forces an update of the web dependencies.")
+	parser.add_argument('--temp-dir', '--tempdir', type=lambda p: Path(p).resolve(), help='Set a custom temporary directory to use (this is only needed if the defualt one is on a RAM disk, which Factorio does not support).')
 
 	args = parser.parse_args()
 	if args.verbose > 0:
@@ -419,7 +424,7 @@ def auto(*args):
 		timestamp, filePath = max(
 			(save.stat().st_mtime, save)
 			for save in saves.iterdir()
-			if save.stem not in {"_autosave1", "_autosave2", "_autosave3"}
+			if not save.stem.startswith("_autosave")
 		)
 		foldername = filePath.stem
 		print("No save name passed. Using most recent save: %s" % foldername)
@@ -434,7 +439,7 @@ def auto(*args):
 
 		if not globResults:
 			print(f'Cannot find savefile: "{saveName}"')
-			raise ValueError(f'Cannot find savefile: "{saveName}"')
+			raise IOError(f"savefile {saveName!r} not found in {str(saves)!r}")
 		results = [save for save in globResults if save.is_file()]
 		for result in results:
 			saveGames.add(result.stem)
@@ -467,7 +472,7 @@ def auto(*args):
 			possibleFactorioPaths += [ drive + path for drive in availableDrives for path in windowsPathsStandalone ]
 		if args.standalone == 0:
 			possibleFactorioPaths += [ drive + path for drive in availableDrives for path in windowsPathsSteam ]
-			
+
 	try:
 		factorioPath = next(
 			x
@@ -546,7 +551,12 @@ def auto(*args):
 				buildAutorun(args, workfolder, foldername, isFirstSnapshot, setDaytime)
 				isFirstSnapshot = False
 
-				with TemporaryDirectory(prefix="FactorioMaps-") as tmpDir:
+				if args.temp_dir is not None:
+					try:
+						os.makedirs(args.temp_dir)
+					except OSError:
+						pass
+				with TemporaryDirectory(prefix="FactorioMaps-", dir=args.temp_dir) as tmpDir:
 					configPath = buildConfig(args, tmpDir, args.basepath)
 
 					pid = None
@@ -575,11 +585,11 @@ def auto(*args):
 						# try to find steam
 						try:
 							from winreg import OpenKey, HKEY_CURRENT_USER, ConnectRegistry, QueryValueEx, REG_SZ
-							
+
 							key = OpenKey(ConnectRegistry(None, HKEY_CURRENT_USER), r'Software\Valve\Steam')
 							val, valType = QueryValueEx(key, 'SteamExe')
 							if valType != REG_SZ:
-								raise FileNotFoundError( errno.ENOENT, os.strerror(errno.ENOENT), "SteamExe")
+								raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), "SteamExe")
 							steamPath = Path(val)
 						except (ImportError, FileNotFoundError) as e:
 							# fallback to old method
@@ -587,7 +597,7 @@ def auto(*args):
 								steamPath = Path(factorioPath, "..", "..", "..", "..", "..", "..", "steam.exe")
 							else:
 								steamPath = Path(factorioPath, "..", "..", "..", "..", "..", "..", "steam")
-						
+
 						if steamPath and steamPath.exists(): # found a steam executable
 							usedSteamLaunchHack = True
 							exeWithArgs = [
