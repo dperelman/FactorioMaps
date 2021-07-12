@@ -748,6 +748,14 @@ def auto(*args):
 			os.remove(os.path.join(workfolder, "mapInfo.out.json"))
 
 
+		# List of length 3 tuples:
+		#   mod name in lowercase (e.g. `krastorio2`, `fnei`)
+		#   (major version string, minor version string, patch version string, bool if the mod's a zipfile)
+		#   mod full ID in original casing (e.g. `Krastorio2_1.1.4`, `FNEI_0.4.1`)
+		#
+		# Does not include mods that don't have versions in
+		# their names, such as mods manually installed from
+		# source.
 		modVersions = sorted(
 				map(lambda m: (m.group(2).lower(), (m.group(3), m.group(4), m.group(5), m.group(6) is None), m.group(1)),
 					filter(lambda m: m,
