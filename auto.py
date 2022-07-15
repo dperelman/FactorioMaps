@@ -442,7 +442,7 @@ def auto(*args):
 			raise IOError(f"savefile {saveName!r} not found in {str(saves)!r}")
 		results = [save for save in globResults if save.is_file()]
 		for result in results:
-			saveGames.add(result.stem)
+			saveGames.add(result.relative_to(saves).as_posix())
 
 	saveGames = naturalSort(list(saveGames))
 
@@ -566,7 +566,7 @@ def auto(*args):
 
 					launchArgs = [
 						'--load-game',
-						str(Path(userFolder, 'saves', savename).absolute()),
+						str(Path(userFolder, 'saves', *(savename.split('/'))).absolute()),
 						'--disable-audio',
 						'--config',
 						str(configPath),
