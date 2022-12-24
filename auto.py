@@ -464,8 +464,13 @@ def auto(*args):
 			"Program Files (x86)/Steam/steamapps/common/Factorio/bin/x64/factorio.exe",
 			"Steam/steamapps/common/Factorio/bin/x64/factorio.exe",
 		]
+		def driveExists(drive):
+			try:
+				return Path(f"{drive}:/").exists()
+			except (OSError, PermissionError):
+				return False
 		availableDrives = [
-			"%s:/" % d for d in string.ascii_uppercase if Path(f"{d}:/").exists()
+			"%s:/" % d for d in string.ascii_uppercase if driveExists(d)
 		]
 		possibleFactorioPaths = unixPaths
 		if args.steam == 0:
