@@ -120,7 +120,7 @@ def startGameAndReadGameLogs(results, condition, exeWithArgs, isSteam, tmpDir, p
 	with os.fdopen(pipeOut, 'r') as pipef:
 
 		if isSteam:
-			printErase("using steam launch hack.")
+			printErase("using steam launch hack")
 
 			attrs = ('pid', 'name', 'create_time')
 
@@ -424,7 +424,7 @@ def auto(*args):
 		timestamp, filePath = max(
 			(save.stat().st_mtime, save)
 			for save in saves.iterdir()
-			if not save.stem.startswith("_autosave")
+			if not save.stem.startswith("_autosave") and save.name != "steam_autocloud.vdf"
 		)
 		foldername = filePath.stem
 		print("No save name passed. Using most recent save: %s" % foldername)
