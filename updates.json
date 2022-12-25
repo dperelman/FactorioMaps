@@ -79,6 +79,7 @@
         "Allow for custom temporary directory for usage with RAM-disks by Huntfx",
 		"Support savegames located in subdirectories by sonowz",
 		"Fix OSError/PermissionError in availableDrives by sonowz",
-		"Ignore steam_autocloud file"
+		"Ignore steam_autocloud file",
+		"Implemented malformed item checking"
     ]
 }

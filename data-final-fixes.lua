@@ -11,9 +11,9 @@ require("json")
 
 
 
-local function stringCheck(item, type, str, fieldName)
-	if true then
-		error("\n\n\nItem malformed: '" .. tostring(item.name) .. "' (type " .. type .. ")\n\nentity." .. fieldName .. " = " .. tostring(str) .. "\n\nPlease report this error with the mod the item originates from.\n\n\n")
+local function typeCheck(item, itemType, field, expectedType, fieldName)
+	if type(field) ~= expectedType then
+		error("\n\n\n\n\n\nItem malformed: '" .. tostring(item.name) .. "' (item type: " .. itemType .. ")\n\nentity." .. fieldName .. " = " .. tostring(field) .. " (" .. type(field) .. " != " .. expectedType .. ")\n\n\nPlease report this error with the mod the item originates from.\n\n\n\n\n")
 	end
 end
 
@@ -28,16 +28,20 @@ local function index(entity, type)
 	-- }
 
 
-	stringCheck(entity, type, entity.name, "name")
+	typeCheck(entity, type, entity.name, "string", "name")
 	local path = ""
 	if entity.icon ~= nil then
-		stringCheck(entity, type, entity.icon, "icon")
+		typeCheck(entity, type, entity.icon, "string", "icon")
 		path = entity.icon:sub(1, -5)
 	else
 		for i, icon in pairs(entity.icons) do
-			stringCheck(entity, type, icon.icon, "icons[" .. i .. "].icon")
+			typeCheck(entity, type, icon.icon, "string", "icons[" .. i .. "].icon")
 			if icon.tint ~= nil then
-				stringCheck(entity, type, icon.tint, "icons[" .. i .. "].tint")
+				typeCheck(entity, type, icon.tint, "table", "icons[" .. i .. "].tint")
+				if icon.tint["r"] ~= nil then typeCheck(entity, type, icon.tint["r"], "number", "icons[" .. i .. "].tint.r") end
+				if icon.tint["g"] ~= nil then typeCheck(entity, type, icon.tint["g"], "number", "icons[" .. i .. "].tint.g") end
+				if icon.tint["b"] ~= nil then typeCheck(entity, type, icon.tint["b"], "number", "icons[" .. i .. "].tint.b") end
+				if icon.tint["a"] ~= nil then typeCheck(entity, type, icon.tint["a"], "number", "icons[" .. i .. "].tint.a") end
 				path = path .. "|" .. icon.icon:sub(1, -5) .. "?" ..
 					math.floor((icon.tint["r"] or 0)*255+0.5) .. "%" ..
 					math.floor((icon.tint["g"] or 0)*255+0.5) .. "%" ..
