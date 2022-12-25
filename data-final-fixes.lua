@@ -11,7 +11,11 @@ require("json")
 
 
 
-
+local function stringCheck(item, type, str, fieldName)
+	if true then
+		error("\n\n\nItem malformed: '" .. tostring(item.name) .. "' (type " .. type .. ")\n\nentity." .. fieldName .. " = " .. tostring(str) .. "\n\nPlease report this error with the mod the item originates from.\n\n\n")
+	end
+end
 
 
 local function index(entity, type)
@@ -24,12 +28,16 @@ local function index(entity, type)
 	-- }
 
 
+	stringCheck(entity, type, entity.name, "name")
 	local path = ""
 	if entity.icon ~= nil then
+		stringCheck(entity, type, entity.icon, "icon")
 		path = entity.icon:sub(1, -5)
 	else
 		for i, icon in pairs(entity.icons) do
+			stringCheck(entity, type, icon.icon, "icons[" .. i .. "].icon")
 			if icon.tint ~= nil then
+				stringCheck(entity, type, icon.tint, "icons[" .. i .. "].tint")
 				path = path .. "|" .. icon.icon:sub(1, -5) .. "?" ..
 					math.floor((icon.tint["r"] or 0)*255+0.5) .. "%" ..
 					math.floor((icon.tint["g"] or 0)*255+0.5) .. "%" ..
