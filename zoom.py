@@ -67,7 +67,7 @@ def simpleZoom(workQueue):
 
 		for z in range(start - 1, stop - 1, -1):
 			if img.size[0] >= MINRENDERBOXSIZE * 2 and img.size[1] >= MINRENDERBOXSIZE * 2:
-				img = img.resize((img.size[0] // 2, img.size[1] // 2), Image.ANTIALIAS)
+				img = img.resize((img.size[0] // 2, img.size[1] // 2), Image.Resampling.LANCZOS)
 			zFolder = Path(folder, str(z))
 			if not zFolder.exists():
 				zFolder.mkdir(parents=True)
@@ -218,7 +218,7 @@ def work(basepath, pathList, surfaceName, daytime, size, start, stop, last, chun
 										coords[m][1] * size // 2,
 									),
 									im=img.resize(
-										(size // 2, size // 2), Image.ANTIALIAS
+										(size // 2, size // 2), Image.Resampling.LANCZOS
 									),
 								)
 
@@ -461,7 +461,7 @@ def zoom(
 											),
 											im=Image.open(path, mode="r")
 											.convert("RGB")
-											.resize((imageSize, imageSize), Image.ANTIALIAS),
+											.resize((imageSize, imageSize), Image.Resampling.LANCZOS),
 										)
 
 										if OUTEXT != EXT:
