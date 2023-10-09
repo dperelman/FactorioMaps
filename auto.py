@@ -58,7 +58,7 @@ userFolder = Path(__file__, "..", "..", "..").resolve()
 
 def naturalSort(l):
 	convert = lambda text: int(text) if text.isdigit() else text.lower()
-	alphanum_key = lambda key: [ convert(c) for c in re.split('(\d+)', key) ]
+	alphanum_key = lambda key: [ convert(c) for c in re.split(r'(\d+)', key) ]
 	return sorted(l, key = alphanum_key)
 
 def printErase(arg):
@@ -796,7 +796,7 @@ def auto(*args):
 								if "iconType" in tag:
 									addTag(tags, tag["iconType"], tag["iconName"], True)
 								if "text" in tag:
-									for match in re.finditer("\[([^=]+)=([^\]]+)", tag["text"]):
+									for match in re.finditer(r"\[([^=]+)=([^\]]+)", tag["text"]):
 										addTag(tags, match.group(1), match.group(2))
 
 			rmtree(os.path.join(workfolder, "Images", "labels"), ignore_errors=True)
