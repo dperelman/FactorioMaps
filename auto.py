@@ -280,7 +280,7 @@ def convertJSONFileToLua(path: Path):
                 r'("(?:\\"|[^"])*")([^"]*)',
                 lambda m: m.group(1) + m.group(2).replace("[", "{").replace("]", "}"),
                 f.read()
-        )).replace('\\"', '\\\\"').encode("utf-8").decode("unicode-escape")
+        ))
 
 
 AUTORUN_PATH = Path(__file__, "..", "autorun.lua").resolve()
