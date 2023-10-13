@@ -278,7 +278,7 @@ def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstSnap
     mapInfoPath = Path(workFolder, "mapInfo.json")
     if mapInfoPath.is_file():
         with mapInfoPath.open("r", encoding='utf-8') as f:
-            mapInfoLua = re.sub(r'"([^"]+)" *:', lambda m: '["'+m.group(1)+'"] = ', f.read().replace("[", "{").replace("]", "}").replace('"', '\\"'))
+            mapInfoLua = re.sub(r'"([^"]+)" *:', lambda m: '["'+m.group(1)+'"] = ', f.read().replace("[", "{").replace("]", "}"))
             # TODO: Update for new argument parsing
 #			if isFirstSnapshot:
 #				f.seek(0)
@@ -317,7 +317,7 @@ def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstSnap
             date = "{datetime.datetime.strptime(args.date, "%d/%m/%y").strftime("%d/%m/%y")}",
             surfaces = {surfaceString},
             name = "{str(outFolder) + "/"}",
-            mapInfo = {mapInfoLua.encode("utf-8").decode("unicode-escape")},
+            mapInfo = {mapInfoLua.replace('\\"', '\\\\"').encode("utf-8").decode("unicode-escape")},
             chunkCache = {chunkCache}
             }}'''
         f.write(autorunString)
