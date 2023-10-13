@@ -269,36 +269,36 @@ def changeModlist(modpath: Path,newState: bool):
         json.dump(modlist, f, indent=2)
 
 
+def convertJSONFileToLua(path: Path):
+    if not path.is_file():
+        return "{}"
+    with path.open("r", encoding="utf-8") as f:
+        return re.sub(
+            r'"([^"]+)" *:',
+            lambda m: '["'+m.group(1)+'"] = ',
+            re.sub(
+                r'("(?:\\"|[^"])*")([^"]*)',
+                lambda m: m.group(1) + m.group(2).replace("[", "{").replace("]", "}"),
+                f.read()
+        ))
+
+
+AUTORUN_PATH = Path(__file__, "..", "autorun.lua").resolve()
+def clearAutorun():
+    AUTORUN_PATH.open('w', encoding="utf-8").close()
+
 def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstSnapshot: bool, daytime: str):
     printErase("Building autorun.lua")
-    mapInfoPath = Path(workFolder, "mapInfo.json")
-    if mapInfoPath.is_file():
-        with mapInfoPath.open("r", encoding='utf-8') as f:
-            mapInfoLua = re.sub(r'"([^"]+)" *:', lambda m: '["'+m.group(1)+'"] = ', f.read().replace("[", "{").replace("]", "}"))
-            # TODO: Update for new argument parsing
-#			if isFirstSnapshot:
-#				f.seek(0)
-#				mapInfo = json.load(f)
-#				if "options" in mapInfo:
-#					for kwarg in changedKwargs:
-#						if kwarg in ("hd", "dayonly", "nightonly", "build-range", "connect-range", "tag-range"):
-#							printErase("Warning: flag '" + kwarg + "' is overriden by previous setting found in existing timeline.")
-    else:
-        mapInfoLua = "{}"
+    mapInfoLua = convertJSONFileToLua(Path(workFolder, "mapInfo.json"))
 
     isFirstSnapshot = False
 
-    chunkCachePath = Path(workFolder, "chunkCache.json")
-    if chunkCachePath.is_file():
-        with chunkCachePath.open("r", encoding="utf-8") as f:
-            chunkCache = re.sub(r'"([^"]+)" *:', lambda m: '["'+m.group(1)+'"] = ', f.read().replace("[", "{").replace("]", "}"))
-    else:
-        chunkCache = "{}"
+    chunkCache = convertJSONFileToLua(Path(workFolder, "chunkCache.json"))
 
     def lowerBool(value: bool):
         return str(value).lower()
 
-    with Path(__file__, "..", "autorun.lua").resolve().open("w", encoding="utf-8") as f:
+    with AUTORUN_PATH.resolve().open("w", encoding="utf-8") as f:
         surfaceString = '{"' + '", "'.join(args.surface) + '"}' if args.surface else "nil"
         autorunString = \
             f'''fm.autorun = {{
@@ -313,7 +313,7 @@ def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstSnap
             date = "{datetime.datetime.strptime(args.date, "%d/%m/%y").strftime("%d/%m/%y")}",
             surfaces = {surfaceString},
             name = "{str(outFolder) + "/"}",
-            mapInfo = {mapInfoLua.encode("utf-8").decode("unicode-escape")},
+            mapInfo = {mapInfoLua},
             chunkCache = {chunkCache}
             }}'''
         f.write(autorunString)
@@ -642,8 +642,7 @@ def auto(*args):
                     while not datapath.exists():
                         time.sleep(0.4)
 
-                    # empty autorun.lua
-                    Path(__file__, "..", "autorun.lua").resolve().open('w', encoding="utf-8").close()
+                    clearAutorun()
 
                     latest = []
                     with datapath.open('r', encoding="utf-8") as f:
@@ -898,6 +897,8 @@ def auto(*args):
             kill(pid)
         except:
             pass
+
+        clearAutorun()
 
         changeModlist(args.mod_path, False)
 
