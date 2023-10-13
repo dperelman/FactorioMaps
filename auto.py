@@ -269,12 +269,16 @@ def changeModlist(modpath: Path,newState: bool):
         json.dump(modlist, f, indent=2)
 
 
+AUTORUN_PATH = Path(__file__, "..", "autorun.lua").resolve()
+def clearAutorun():
+    AUTORUN_PATH.open('w', encoding="utf-8").close()
+
 def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstSnapshot: bool, daytime: str):
     printErase("Building autorun.lua")
     mapInfoPath = Path(workFolder, "mapInfo.json")
     if mapInfoPath.is_file():
         with mapInfoPath.open("r", encoding='utf-8') as f:
-            mapInfoLua = re.sub(r'"([^"]+)" *:', lambda m: '["'+m.group(1)+'"] = ', f.read().replace("[", "{").replace("]", "}"))
+            mapInfoLua = re.sub(r'"([^"]+)" *:', lambda m: '["'+m.group(1)+'"] = ', f.read().replace("[", "{").replace("]", "}").replace('"', '\\"'))
             # TODO: Update for new argument parsing
 #			if isFirstSnapshot:
 #				f.seek(0)
@@ -298,7 +302,7 @@ def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstSnap
     def lowerBool(value: bool):
         return str(value).lower()
 
-    with Path(__file__, "..", "autorun.lua").resolve().open("w", encoding="utf-8") as f:
+    with AUTORUN_PATH.resolve().open("w", encoding="utf-8") as f:
         surfaceString = '{"' + '", "'.join(args.surface) + '"}' if args.surface else "nil"
         autorunString = \
             f'''fm.autorun = {{
@@ -642,8 +646,7 @@ def auto(*args):
                     while not datapath.exists():
                         time.sleep(0.4)
 
-                    # empty autorun.lua
-                    Path(__file__, "..", "autorun.lua").resolve().open('w', encoding="utf-8").close()
+                    clearAutorun()
 
                     latest = []
                     with datapath.open('r', encoding="utf-8") as f:
@@ -898,6 +901,8 @@ def auto(*args):
             kill(pid)
         except:
             pass
+
+        clearAutorun()
 
         changeModlist(args.mod_path, False)
 
