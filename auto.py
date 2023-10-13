@@ -6,17 +6,20 @@ if sys.maxsize <= 2**32 or sys.hexversion < 0x3060000:
 
 import os
 import traceback
-import pkg_resources
-from pkg_resources import DistributionNotFound, VersionConflict
 from pathlib import Path
 
 try:
-	with Path(__file__, "..", "requirements.txt").resolve().open("r", encoding="utf-8") as f:
-		pkg_resources.require(f.read().splitlines())
-except (DistributionNotFound, VersionConflict) as ex:
+	import pkg_resources
+	from pkg_resources import DistributionNotFound, VersionConflict
+	try:
+		with Path(__file__, "..", "requirements.txt").resolve().open("r", encoding="utf-8") as f:
+			pkg_resources.require(f.read().splitlines())
+	except (DistributionNotFound, VersionConflict) as ex:
+		raise ImportError from ex
+except ImportError as ex:
 	traceback.print_exc()
 	print("\nDependencies not met. Run `pip install -r requirements.txt` to install missing dependencies.")
-	sys.exit(1)
+	raise ex
 
 import glob
 import argparse
