@@ -543,8 +543,8 @@ def auto(*args):
         daytimes = []
         if args.day:
             daytimes.append("day")
-        # if args.night:
-        # 	daytimes.append("night")
+        if args.night:
+        	daytimes.append("night")
 
         for index, savename in () if args.dry else enumerate(saveGames):
             for daytimeIndex, setDaytime in enumerate(daytimes):
@@ -745,7 +745,7 @@ def auto(*args):
                             data["maps"][int(mapIndex)]["surfaces"][surfaceName]["chunks"] = surfaceStuff["chunks"]
                         if "links" in surfaceStuff:
                             for linkIndex, link in enumerate(surfaceStuff["links"]):
-                                if "filename" in link:
+                                if "zoom" in link:
                                     data["maps"][int(mapIndex)]["surfaces"][surfaceName]["links"][linkIndex]["path"] = link["path"]
                                     data["maps"][int(mapIndex)]["surfaces"][surfaceName]["links"][linkIndex]["zoom"]["min"] = link["zoom"]["min"]
                 destf.seek(0)

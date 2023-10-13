@@ -328,7 +328,7 @@ def ref(
 
                     for daytime in ("day", "night"):
                         if link["type"] == "link_renderbox_area" and (link["daynight"] or daytime == "day"):
-                            if "filename" in link:
+                            if "zoom" in link:
                                 path = os.path.join(link["toSurface"], daytime if link["daynight"] else "day", "renderboxes", str(surface["zoom"]["max"]), link["filename"])
 
                                 if path not in linksByPath:
