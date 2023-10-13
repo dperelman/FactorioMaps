@@ -177,6 +177,11 @@ map-marker {
 	display: block;
 	cursor: grab;
 }
+map-marker > img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
 map-marker span {
 	color: white;
 	font-size: 1em;
