@@ -170,25 +170,26 @@ img.leaflet-tile.leaflet-tile-loaded {
 
 
 map-marker {
-	width: 32px;
-	height: 32px;
-	margin-left: -16px;
-	margin-top: -16px;
+	--label-image-size: 48px;
+	width: var(--label-image-size);
+	height: var(--label-image-size);
+	margin-left: calc(var(--label-image-size) / -2);
+	margin-top: calc(var(--label-image-size) / -2);
 	display: block;
 	cursor: grab;
 }
 map-marker > img {
-    width: 32px;
-    height: 32px;
+    width: var(--label-image-size);
+    height: var(--label-image-size);
     object-fit: contain;
 }
 map-marker span {
 	color: white;
 	font-size: 1em;
-	margin: 0 -32px;
+	margin: 0 calc(-1 * var(--label-image-size));
 	text-align: center;
 	display: block;
-	width: 96px;
+	width: calc(3 * var(--label-image-size));
 }
 map-marker span img {
     height: 2em;
