@@ -81,5 +81,11 @@
 		"Fix OSError/PermissionError in availableDrives by sonowz",
 		"Ignore steam_autocloud file",
 		"Implemented malformed item checking"
+    ],
+    "4.4.0": [
+      "Added support for the latest python versions (3.12)",
+      "Improve image downscaling",
+      "Fix issue involving renderboxes and unrendered surfaces",
+      "Fix several issues with special characters in tags"
     ]
 }
