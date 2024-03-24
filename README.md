@@ -9,7 +9,7 @@ Mod portal link: https://mods.factorio.com/mod/L0laapk3_FactorioMaps
 1. Download FactorioMaps to `%appdata%\mods\`, either from the [mod portal](https://mods.factorio.com/mod/L0laapk3_FactorioMaps) (The mod does not need to be enabled to work) and then unzipping it, or from [the github releases page](https://github.com/L0laapk3/FactorioMaps/releases).
 1. Install the latest version of [**64 bit** python 3](https://www.python.org/downloads/). (Do *not* install python 2.)
 Make sure to do a select the "add python to PATH" and "install pip" options.
-1. Inside the factoriomaps folder, install the required pip packages: `python -m pip install -r requirements.txt`.
+1. Inside the factoriomaps folder, install the required pip packages: `python -m pip install --upgrade -r requirements.txt`.
 
 # How to Use
 1. Make sure you close factorio before starting the process.
