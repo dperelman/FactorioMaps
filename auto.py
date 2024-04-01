@@ -66,55 +66,62 @@ def printErase(arg):
         tsiz = tsize()[0]
         print("\r{}{}\n".format(arg, " " * (tsiz*math.ceil(len(arg)/tsiz)-len(arg) - 1)), end="", flush=True)
     except:
-        #raise
-        pass
+        raise
 
 
 def startGameAndReadGameLogs(results, condition, exeWithArgs, isSteam, tmpDir, pidBlacklist, rawTags, args):
-
     pipeOut, pipeIn = os.pipe()
     p = subprocess.Popen(exeWithArgs, stdout=pipeIn)
 
-    printingStackTraceback = False
-    # TODO: keep printing multiline stuff until new print detected
     prevPrinted = False
+    prevTag = None
     def handleGameLine(line, isFirst):
+        # First line should be the factorio version print. Otherwise something might be seriously wrong.
         if isFirst and not re.match(r'^ *\d+\.\d{3} \d{4}-\d\d-\d\d \d\d:\d\d:\d\d; Factorio (\d+\.\d+\.\d+) \(build (\d+), [^)]+\)$', line):
             suggestion = "maybe your version is outdated or too new?"
             if line.endswith('Error Util.cpp:83: weakly_canonical: Incorrect function.'):
                 suggestion = "maybe your temp directory is on a ramdisk?"
             raise RuntimeError(f"Unrecognised output from factorio ({suggestion})\n\nOutput from factorio:\n{line}")
 
-        nonlocal prevPrinted
         line = line.rstrip('\n')
+
+        # Continue printing multiline prints
+        nonlocal prevPrinted, prevTag
         if re.match(r'^\ *\d+(?:\.\d+)? *[^\n]*$', line) is None:
             if prevPrinted:
-                printErase(line)
+                printErase(f"[{prevTag}] {line}")
             return
-
         prevPrinted = False
+        def printLine(line, tag="GAME"):
+            nonlocal prevPrinted, prevTag
+            printErase(f"[{tag}] {line}")
+            prevPrinted = True
+            prevTag = tag
 
+        # Capture tag file paths as generated in data-final-fixes
         m = re.match(r'^\ *\d+(?:\.\d+)? *Script *@__L0laapk3_FactorioMaps__\/data-final-fixes\.lua:\d+: FactorioMaps_Output_RawTagPaths:([^:]+):(.*)$', line, re.IGNORECASE)
         if m is not None:
             rawTags[m.group(1)] = m.group(2)
             if rawTags["__used"]:
                 raise Exception("Tags added after they were used.")
-        else:
-            if printingStackTraceback or line == "stack traceback:":
-                printErase("[GAME] %s" % line)
-                prevPrinted = True
-                return True
-            m = re.match(r'^\ *\d+(?:\.\d+)? *Script *@__L0laapk3_FactorioMaps__\/(.*?)(?:(\[info\]) ?(.*))?$', line, re.IGNORECASE)
-            if m is not None and m.group(2) is not None:
-                printErase(m.group(3))
-                prevPrinted = True
-            elif m is not None and args.verbose:
-                printErase(m.group(1))
-                prevPrinted = True
-            elif line.lower() in ("error", "warn", "exception", "fail", "invalid") or (args.verbosegame and len(line) > 0):
-                printErase("[GAME] %s" % line)
-                prevPrinted = True
-        return False
+            return
+
+        # Always print error lines
+        if re.match(r'^\ *\d+(?:\.\d+)? *Error', line, re.IGNORECASE):
+            printLine(line, tag="GAME-ERROR")
+            return
+
+        m = re.match(r'^\ *\d+(?:\.\d+)? *[^ ]+ *@__L0laapk3_FactorioMaps__\/(.*?): (?:\[(info|warning|error)\] )?(.*)$', line, re.IGNORECASE)
+        if m is not None and m.group(2) is not None: # By default: only print factoriomaps prints with `[info|warning|error]`
+            text = m.group(3)
+            if m.group(2).lower() == "info":
+                printLine(text)
+            else:
+                printLine(f"{m.group(1)}: {text}", tag=f"GAME-{m.group(2)}")
+        elif m is not None and args.verbose: # --verbose: All factoriomaps prints
+            printLine(m.group(3))
+        elif args.verbosegame and len(line) > 0: # --verbosegame: print ALL game logs (except captured tag file paths)
+            printLine(line)
 
 
     with os.fdopen(pipeOut, 'r') as pipef:
@@ -159,13 +166,13 @@ def startGameAndReadGameLogs(results, condition, exeWithArgs, isSteam, tmpDir, p
                         time.sleep(0.4)
                         f.seek(where)
                     else:
-                        printingStackTraceback = handleGameLine(line, isFirstLine)
+                        handleGameLine(line, isFirstLine)
                         isFirstLine = False
 
         else:
             while True:
                 line = pipef.readline().rstrip("\n")
-                printingStackTraceback = handleGameLine(line, isFirstLine)
+                handleGameLine(line, isFirstLine)
                 isFirstLine = False
 
 
@@ -490,7 +497,7 @@ def auto(*args):
             "Searched the following locations:", possibleFactorioPaths
         )
 
-    print("factorio path: {}".format(factorioPath))
+    print(f"factorio path: `{factorioPath}`")
 
     psutil.Process(os.getpid()).nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS if os.name == 'nt' else 5)
 
@@ -498,14 +505,15 @@ def auto(*args):
 
     workfolder = Path(args.basepath, foldername).resolve()
     try:
-        print("output folder: {}".format(workfolder.relative_to(Path(userFolder))))
+        workfolderPrintable = workfolder.relative_to(Path(userFolder))
     except ValueError:
-        print("output folder: {}".format(workfolder.resolve()))
+        workfolderPrintable = workfolder.resolve()
+    print(f"output folder: `{workfolderPrintable}`")
 
     try:
         workfolder.mkdir(parents=True, exist_ok=True)
     except FileExistsError:
-        raise Exception(f"{workfolder} exists and is not a directory!")
+        raise Exception(f"`{workfolderPrintable}` exists and is not a directory!")
 
     updateLib(args.force_lib_update)
 
@@ -521,7 +529,7 @@ def auto(*args):
     rawTags["__used"] = False
 
     if args.delete:
-        print(f"Deleting output folder ({workfolder})")
+        print(f"Deleting output folder")
         try:
             rmtree(workfolder)
         except (FileNotFoundError, NotADirectoryError):
@@ -679,7 +687,7 @@ def auto(*args):
                     for jindex, screenshot in enumerate(latest):
                         outFolder, timestamp, surface, daytime = list(map(lambda s: s.replace("|", " "), screenshot.split(" ")))
                         outFolder = outFolder.replace("/", " ")
-                        print(f"Processing {outFolder}/{'/'.join([timestamp, surface, daytime])} ({len(latest) * index + jindex + 1 + daytimeIndex} of {len(latest) * len(saveGames) * len(daytimes)})")
+                        print(f"Processing `{outFolder}/{'/'.join([timestamp, surface, daytime])}` ({len(latest) * index + jindex + 1 + daytimeIndex} of {len(latest) * len(saveGames) * len(daytimes)})")
 
                         if daytime in daytimeSurfaces:
                             daytimeSurfaces[daytime].append(surface)

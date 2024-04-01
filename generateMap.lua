@@ -178,7 +178,7 @@ function fm.generateMap(data)
 	local allGridString = ""
 	if not surfaceWasScanned then
 
-		log("[info]Surface prescan " .. fm.savename .. fm.autorun.filePath .. "/" .. fm.currentSurface.name)
+		log("[INFO] Surface scan `" .. fm.savename .. fm.autorun.filePath .. "/" .. fm.currentSurface.name .. "`")
 
 
 
@@ -551,7 +551,7 @@ function fm.generateMap(data)
 
 
 
-	log("[info]Surface capture " .. fm.savename .. fm.autorun.filePath .. "/" .. fm.currentSurface.name .. "/" .. fm.autorun.daytime)
+	log("[INFO] Surface capture `" .. fm.savename .. fm.autorun.filePath .. "/" .. fm.currentSurface.name .. "/" .. fm.autorun.daytime .. "`")
 
 
 

@@ -66,8 +66,8 @@ script.on_event(defines.events.on_tick, function(event)
 			fm.topfolder = fm.savename
 
 			if fm.autorun.mapInfo.lastTick ~= nil and fm.autorun.mapInfo.lastTick >= game.tick then
-				log("ERROR: An older map has already been captured on this timeline. Out of order capture is not supported. Aborting.")
-				error("An older map has already been captured on this timeline. Out of order capture is not supported. Aborting.")
+				log("[ERROR] An older map has already been captured on this timeline. Out-of-order capture is not supported. Aborting.")
+				error("An older map has already been captured on this timeline. Out-of-order capture is not supported. Aborting.")
 			end
 			fm.autorun.mapInfo.lastTick = game.tick
 
@@ -116,7 +116,7 @@ script.on_event(defines.events.on_tick, function(event)
 			end
 			for _, surfaceName in pairs(fm.autorun.surfaces) do
 				if game.surfaces[surfaceName] == nil then
-					log("ERROR: surface \"" .. surfaceName .. "\" not found.")
+					log("[ERROR] surface \"" .. surfaceName .. "\" not found.")
 					error("surface \"" .. surfaceName .. "\" not found.")
 				end
 			end

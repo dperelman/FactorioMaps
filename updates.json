@@ -87,5 +87,8 @@
       "Improve image downscaling",
       "Fix issue involving renderboxes and unrendered surfaces",
       "Fix several issues with special characters in tags"
+    ],
+    "4.5.0": [
+      "!Prevent breaking timeline by capturing saves out-of-order."
     ]
 }
