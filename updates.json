@@ -90,6 +90,7 @@
     ],
     "4.5.0": [
       "!Prevent breaking timeline by capturing saves out-of-order.",
-      "Check if timeline is bricked instead of blindly working on it."
+      "Check if timeline is bricked instead of blindly working on it.",
+      "Fix that savefiles were being resorted when the order was manually specified."
     ]
 }

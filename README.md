@@ -20,7 +20,7 @@ Make sure to do a select the "add python to PATH" and "install pip" options.
     * `python auto.py savename` Generate a snapshot of *savename* and store it to folder *savename*.
     * `python auto.py outfolder savename` Generate a snapshot of *savename* and store it to folder *outfolder*.
     * `python auto.py outfolder savename1 savename2 savename3` Generate timeline snapshots of *savename1*, *savename2*, *savename3* in that order, and store it to folder *outfolder*.
-    * `python auto.py outfolder savename*` Generate timeline snapshots of all savefiles that match the glob pattern `savename*` in natural order, and store it to folder *outfolder*.
+    * `python auto.py outfolder savename*` Generate timeline snapshots of all savefiles that match the glob pattern `savename*`, sorted by file name in natural order, and store it to folder *outfolder*. Note that you must name the files in chronological order.
     * `python auto.py --factorio=PATH` Same as `python auto.py`, but will use `factorio.exe` from *PATH* instead of attempting to find it in common locations.
     * `python auto.py --verbose` Displays factoriomaps related logs.
     * `python auto.py --verbosegame` Displays *all* game logs.

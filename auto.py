@@ -453,7 +453,8 @@ def auto(*args):
     saveNames = args.savename or [foldername]
     foldername = foldername.replace('*', '').replace('?', '')
 
-    saveGames = set()
+    saveGames = []
+    saveGameSet = set()
     for saveName in saveNames:
         saveNameEscaped = glob.escape(saveName).replace("[*]", "*")
         globResults = list(saves.glob(saveNameEscaped))
@@ -462,14 +463,18 @@ def auto(*args):
         if not globResults:
             print(f'Cannot find savefile: "{saveName}"')
             raise IOError(f"savefile {saveName!r} not found in {str(saves)!r}")
-        results = [save for save in globResults if save.is_file()]
-        for result in results:
-            saveGames.add(result.relative_to(saves).as_posix())
+        newSaveGames = set([save.relative_to(saves).as_posix() for save in globResults if save.is_file()])
 
-    saveGames = naturalSort(list(saveGames))
+        newSaveGames -= saveGameSet
+        saveGameSet |= newSaveGames
+        saveGames += naturalSort(list(newSaveGames))
 
-    if args.verbose > 0:
-        print(f"Will generate snapshots for : {saveGames}")
+    if len(saveGames) == 0:
+        raise Exception("No savegames match arguments")
+    elif len(saveGames) > 1:
+        print(f"Will generate snapshots in this order: (Will not work if this order is not chronological!)")
+        for i in range(len(saveGames)):
+            print(f"{i+1}:\t{saveGames[i]}")
 
     if args.factorio:
         possibleFactorioPaths = [args.factorio]
