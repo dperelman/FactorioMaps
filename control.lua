@@ -61,12 +61,17 @@ script.on_event(defines.events.on_tick, function(event)
 				fm.autorun.mapInfo.mapExchangeString = game.get_map_exchange_string()
 				fm.autorun.mapInfo.maps = {}
 			end
-		
+
 			fm.savename = fm.autorun.name or ""
 			fm.topfolder = fm.savename
-			fm.autorun.tick = game.tick
 
-			hour = math.ceil(fm.autorun.tick / 60 / 60 / 60)
+			if fm.autorun.mapInfo.lastTick ~= nil and fm.autorun.mapInfo.lastTick >= game.tick then
+				log("ERROR: An older map has already been captured on this timeline. Out of order capture is not supported. Aborting.")
+				error("An older map has already been captured on this timeline. Out of order capture is not supported. Aborting.")
+			end
+			fm.autorun.mapInfo.lastTick = game.tick
+
+			hour = math.ceil(fm.autorun.mapInfo.lastTick / 60 / 60 / 60)
 			exists = true
 			fm.autorun.filePath = tostring(hour)
 			local i = 1
@@ -74,7 +79,7 @@ script.on_event(defines.events.on_tick, function(event)
 				exists = false
 				if fm.autorun.mapInfo.maps ~= nil then
 					for _, map in pairs(fm.autorun.mapInfo.maps) do
-						if map.path == fm.autorun.filePath and map.tick ~= fm.autorun.tick then
+						if map.path == fm.autorun.filePath and map.tick ~= fm.autorun.mapInfo.lastTick then
 							exists = true
 							break
 						end
@@ -85,10 +90,10 @@ script.on_event(defines.events.on_tick, function(event)
 					i = i + 1
 				end
 			end
-			
+
 			fm.API.pull()
 
-			
+
 			if fm.autorun.surfaces == nil then
 				if fm.autorun.mapInfo.defaultSurface == nil then
 					if game.surfaces["battle_surface_1"] then	-- detect pvp scenario
@@ -115,7 +120,7 @@ script.on_event(defines.events.on_tick, function(event)
 					error("surface \"" .. surfaceName .. "\" not found.")
 				end
 			end
-			
+
 			fm.API.activeLinks = {}
 			local newSurfaces = {true} -- discover all surfaces linked to from the original surface list or any new surfaces found by this process.
 			while #newSurfaces > 0 do
@@ -161,14 +166,14 @@ script.on_event(defines.events.on_tick, function(event)
 				latest = fm.autorun.name:sub(1, -2):gsub(" ", "/") .. " " .. fm.autorun.filePath .. " " .. surfaceName:gsub(" ", "|") .. " " .. fm.autorun.daytime .. "\n" .. latest
 			end
 			game.write_file(fm.topfolder .. "latest.txt", latest, false, event.player_index)
-			
+
 
 
 
 			fm.tmp = true
 
 		end
-	
+
 
 
 
@@ -180,7 +185,7 @@ script.on_event(defines.events.on_tick, function(event)
 			-- 	player.teleport({0, 0}, currentSurface)
 			-- 	fm.teleportedPlayer = true
 			-- end
-			
+
 			-- remove no path sign and ghost entities
 			for key, entity in pairs(fm.currentSurface.find_entities_filtered({type={"flying-text","entity-ghost","tile-ghost"}})) do
 				entity.destroy()
@@ -208,19 +213,19 @@ script.on_event(defines.events.on_tick, function(event)
 				fm.currentSurface.daytime = 0.5
 				fm.generateMap(event)
 			end
-			
+
 			fm.ticks = 1
 
 		elseif fm.ticks < 2 then
-			
+
 			game.write_file(fm.topfolder .. "Images/" .. fm.autorun.filePath .. "/" .. fm.currentSurface.name .. "/" .. fm.autorun.daytime .. "/done.txt", "", false, event.player_index)
-	
+
 			-- remove no path sign
 			for key, entity in pairs(fm.currentSurface.find_entities_filtered({type="flying-text"})) do
 				entity.destroy()
 			end
 
-	
+
 			fm.ticks = 2
 
 		else
@@ -229,7 +234,7 @@ script.on_event(defines.events.on_tick, function(event)
 			fm.done = true
 		end
 
-	
+
 	elseif fm.shownWarn == nil then
 		-- give instructions on how to use mod and a warning to disable it.
 
@@ -250,7 +255,7 @@ script.on_event(defines.events.on_tick, function(event)
 				"Do not save! This will result in a bricked gamestate."
 			}
 		end
-	
+
 		fm.shownWarn = true
 
 		game.tick_paused = true
@@ -258,7 +263,7 @@ script.on_event(defines.events.on_tick, function(event)
 		if player.character then
 			player.character.active = false
 		end
-		
+
 		local main = player.gui.center.add{type = "frame", caption = text[1], direction = "vertical"}
 		local topLine = main.add{type = "flow", direction = "horizontal"}
 		topLine.add{type = "label", caption = text[2]}
@@ -269,23 +274,23 @@ script.on_event(defines.events.on_tick, function(event)
 		main.add{type = "label", caption = text[3]}.style.single_line = false
 		main.add{type = "label", caption = text[4]}.style.font = "default-bold"
 		main.style.horizontal_align = "right"
-	
-		
+
+
 		if not fm.done then
 			local buttonContainer = main.add{type = "flow", direction = "horizontal"}
 			local button = buttonContainer.add{type = "button", caption = "Back to main menu"}
 			buttonContainer.style.horizontally_stretchable = true
 			buttonContainer.style.horizontal_align = "right"
 			script.on_event(defines.events.on_gui_click, function(event)
-	
+
 				if event.element == button then
 					main.destroy()
 					exit()
 				end
-	
+
 			end)
 		end
-		
+
 	end
 end)
 

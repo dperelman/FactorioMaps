@@ -11,7 +11,7 @@ x+ = UP, y+ = RIGHT
 corners:
 2   1
   X
-4   3 
+4   3
 ]]--
 
 function adjustBox(entity, box, initBox, corners)
@@ -49,7 +49,7 @@ function fm.generateMap(data)
 	end
 
 	game.set_wait_for_screenshots_to_finish()
-	
+
 
 
 	-- delete folder (if it already exists)
@@ -59,13 +59,13 @@ function fm.generateMap(data)
 	subPath = subPath .. "/"
 
 
-	
+
 	-- Number of pixels in an image     -- CHANGE THIS AND REF.PY WILL NEED TO BE CHANGED
 	local gridSizes = {256, 512, 1024} -- cant have 2048 anymore. code now relies on it being smaller than one game chunk (32 tiles * 32 pixels)
 	local gridSize = gridSizes[2] --always 512x512 pixel images for now, its a good balance (check rest of code before changing this)
 
 	local tilesPerChunk = 32    --hardcoded
-	
+
 	local pixelsPerTile = 32
 	if fm.autorun.mapInfo.options.HD then
 		pixelsPerTile = 64   -- HD textures have 64 pixels/tile
@@ -76,7 +76,7 @@ function fm.generateMap(data)
 
 
 
-	
+
 	if fm.tilenames == nil then
 		local craftableItems = {}
 		for _, recipe in pairs(game.recipe_prototypes) do
@@ -102,7 +102,7 @@ function fm.generateMap(data)
 		end
 	end
 
-	
+
 
 	local spawn = player.force.get_spawn_position(fm.currentSurface)
 
@@ -119,7 +119,7 @@ function fm.generateMap(data)
 	}
 
 
-	
+
 
 	local minX = spawn.x
 	local minY = spawn.y
@@ -131,7 +131,7 @@ function fm.generateMap(data)
 	local surfaceWasScanned = false
 	if fm.autorun.chunkCache then
 		for mapTick, v in pairs(fm.autorun.chunkCache) do
-			if tonumber(mapTick) <= fm.autorun.tick then
+			if tonumber(mapTick) <= fm.autorun.mapInfo.lastTick then
 				if v[fm.currentSurface.name] ~= nil then
 					for s in v[fm.currentSurface.name]:gmatch("%-?%d+ %-?%d+ ?%a?") do
 						local gridX, gridY, prevScanResult = s:match("(%-?%d+) (%-?%d+) ?(%a?)")
@@ -153,9 +153,9 @@ function fm.generateMap(data)
 						imageStats.remembered = imageStats.remembered + 1
 					end
 				end
-				if tonumber(mapTick) == fm.autorun.tick then
+				if tonumber(mapTick) == fm.autorun.mapInfo.lastTick then
 					for i, map in pairs(fm.autorun.mapInfo.maps) do
-						if map.tick == fm.autorun.tick then
+						if map.tick == fm.autorun.mapInfo.lastTick then
 							surfaceWasScanned = v[fm.currentSurface.name] ~= nil
 							mapIndex = i
 							break
@@ -167,7 +167,7 @@ function fm.generateMap(data)
 	end
 
 
-	
+
 	local ENUMSCAN = {
 		RANGE = 1,
 		BUILD = 2,
@@ -213,7 +213,7 @@ function fm.generateMap(data)
 												minY = math.min(minY, y)
 												maxX = math.max(maxX, x)
 												maxY = math.max(maxY, y)
-												
+
 												imageStats.tags = imageStats.tags + 1
 											end
 										end
@@ -243,7 +243,7 @@ function fm.generateMap(data)
 
 									local scanRange = -1
 									local previousScan = (allGrid[gridX .. " " .. gridY] and allGrid[gridX .. " " .. gridY].scan or 0)
-									
+
 									if bit32.band(previousScan, ENUMSCAN.TAG) > 0 then
 										scanRange = fm.autorun.mapInfo.options.ranges.tag
 									end
@@ -253,7 +253,7 @@ function fm.generateMap(data)
 									if bit32.band(previousScan, ENUMSCAN.CONNECT) > 0 then
 										scanRange = math.max(scanRange, fm.autorun.mapInfo.options.ranges.connect)
 									end
-									
+
 									local oldScanRange = scanRange
 									local excludeCount = nil
 									local area = nil
@@ -304,14 +304,14 @@ function fm.generateMap(data)
 															if fm.currentSurface.is_chunk_generated(chunk) then
 																local dist = math.pow(i * tilesPerChunk / pixelsPerTile, 2) + math.pow(j * tilesPerChunk / pixelsPerTile, 2)
 																if dist <= math.pow(scanRange + 0.5, 2) then
-													
+
 																	allGrid[x .. " " .. y] = {x = x, y = y, scan = bit32.bor(allGrid[x .. " " .. y] and allGrid[x .. " " .. y].scan or 0, ENUMSCAN.RANGE) }
 
 																	minX = math.min(minX, x)
 																	minY = math.min(minY, y)
 																	maxX = math.max(maxX, x)
 																	maxY = math.max(maxY, y)
-																	
+
 																	if byBigType then
 																		imageStats.build = imageStats.build + 1
 																	else
@@ -376,8 +376,8 @@ function fm.generateMap(data)
 
 
 
-		
-	
+
+
 		-- smoothing
 		local cont = true
 		while cont do
@@ -403,13 +403,13 @@ function fm.generateMap(data)
 			end
 			cont = #tmp > 0
 			for _, v in pairs(tmp) do
-				allGrid[v.x .. " " .. v.y] = v 
+				allGrid[v.x .. " " .. v.y] = v
 
 				minX = math.min(minX, v.x)
 				minY = math.min(minY, v.y)
 				maxX = math.max(maxX, v.x)
 				maxY = math.max(maxY, v.y)
-								
+
 				imageStats.smoothed = imageStats.smoothed + 1
 			end
 		end
@@ -454,7 +454,7 @@ function fm.generateMap(data)
 	for force, count in pairs(forceStats) do
 		log("        " .. force .. ": " .. count)
 	end
-	
+
 
 	local maxZoom = 20
 	if fm.autorun.mapInfo.options.HD then
@@ -465,7 +465,7 @@ function fm.generateMap(data)
 
 		mapIndex = #fm.autorun.mapInfo.maps + 1
 		fm.autorun.mapInfo.maps[mapIndex] = {
-			tick = fm.autorun.tick,
+			tick = fm.autorun.mapInfo.lastTick,
 			path = fm.autorun.filePath,
 			date = fm.autorun.date,
 			mods = game.active_mods,
@@ -479,13 +479,13 @@ function fm.generateMap(data)
 			}
 		end
 	end
-	
+
 
 	local maxImagesNextToEachotherOnLargestZoom = 2
 	local minZoom = (maxZoom - math.max(2, math.ceil(math.min(math.log2(maxX - minX), math.log2(maxY - minY)) + 0.01 - math.log2(maxImagesNextToEachotherOnLargestZoom))))
 
 	if fm.autorun.mapInfo.maps[mapIndex].surfaces[fm.currentSurface.name] == nil or fm.autorun.mapInfo.maps[mapIndex].surfaces[fm.currentSurface.name].captured ~= true then
-		
+
 
 		fm.autorun.mapInfo.maps[mapIndex].surfaces[fm.currentSurface.name] = {
 			spawn = spawn, -- this only includes spawn point of the player taking the screenshots
@@ -534,23 +534,23 @@ function fm.generateMap(data)
 			end
 		end
 
-		if fm.autorun.chunkCache[fm.autorun.tick] == nil then
-			fm.autorun.chunkCache[fm.autorun.tick] = {}
+		if fm.autorun.chunkCache[fm.autorun.mapInfo.lastTick] == nil then
+			fm.autorun.chunkCache[fm.autorun.mapInfo.lastTick] = {}
 		end
-		fm.autorun.chunkCache[fm.autorun.tick][fm.currentSurface.name] = allGridString:sub(1, -2)
+		fm.autorun.chunkCache[fm.autorun.mapInfo.lastTick][fm.currentSurface.name] = allGridString:sub(1, -2)
 		game.write_file(basePath .. "chunkCache.json", prettyjson(fm.autorun.chunkCache), false, data.player_index)
-	
+
 	end
 	fm.autorun.mapInfo.maps[mapIndex].surfaces[fm.currentSurface.name][fm.autorun.daytime] = true
 
 
 	-- todo: if fm.autorun.mapInfo.maps[mapIndex].surfaces[fm.currentSurface.name].hidden is true, only care about the chunks linked to by renderboxes.
 
-   
+
 	local extension = ".png"
 
 
-	
+
 	log("[info]Surface capture " .. fm.savename .. fm.autorun.filePath .. "/" .. fm.currentSurface.name .. "/" .. fm.autorun.daytime)
 
 
@@ -560,13 +560,13 @@ function fm.generateMap(data)
 		local box = { positionTable[1].x, positionTable[1].y, positionTable[2].x, positionTable[2].y } -- -X -Y X Y
 		local initialBox = { box[1], box[2], box[3], box[4] }
 		local area = {{box[1] - 16, box[2] - 16}, {box[3] + 16, box[4] + 16}}
-		
-		local corners = {0, 0, 0, 0} 
 
-		for _, t in pairs(fm.currentSurface.find_entities_filtered{area=area, name="big-electric-pole"}) do 
+		local corners = {0, 0, 0, 0}
+
+		for _, t in pairs(fm.currentSurface.find_entities_filtered{area=area, name="big-electric-pole"}) do
 			adjustBox(t, box, initialBox, corners)
 		end
-		for _, t in pairs(fm.currentSurface.find_entities_filtered{area=area, type="lamp"}) do 
+		for _, t in pairs(fm.currentSurface.find_entities_filtered{area=area, type="lamp"}) do
 			local control = t.get_control_behavior()
 			if t.energy > 1 and (control and not control.disabled) or (not control and fm.currentSurface.darkness > 0.3) then
 				adjustBox(t, box, initialBox, corners)
@@ -584,22 +584,22 @@ function fm.generateMap(data)
 			zoom = fm.autorun.mapInfo.options.HD and 2 or 1,
 			path = basePath .. "Images/" .. path,
 			show_entity_info = fm.autorun.alt_mode
-		})                        
+		})
 	end
 
 
 
-	for _, chunk in pairs(allGrid) do   
+	for _, chunk in pairs(allGrid) do
 		local positionTable = {
 			{ x =  chunk.x    * gridPixelSize, y =  chunk.y    * gridPixelSize  },
 			{ x = (chunk.x+1) * gridPixelSize, y = (chunk.y+1) * gridPixelSize  }
 		}
 
 		capture(positionTable, fm.currentSurface, fm.autorun.filePath .. "/" .. fm.currentSurface.name .. "/" .. fm.autorun.daytime .. "/" .. maxZoom .. "/" .. chunk.x .. "/" .. chunk.y .. extension)
-	end 
+	end
 
 
- 
+
 	local linkWorkList = {}
 	for _, link in pairs(fm.API.linkData[fm.currentSurface.name] or {}) do
 		if link.type == "link_renderbox_area" then
@@ -620,14 +620,14 @@ function fm.generateMap(data)
 		if link.daynight then
 			surface.daytime = fm.autorun.daytime == "day" and 0 or 0.5
 		end
-		
-		
+
+
 		if doneLinkPaths[path] == nil then
 			if link.daynight or not link.filename then
 				capture(link.to, link.toSurface, path .. extension)
 				link.filename = filename
 				link.zoom = { max = maxZoom }
-		
+
 			end
 			doneLinkPaths[path] = true
 		end
@@ -637,9 +637,9 @@ function fm.generateMap(data)
 		end
 	end
 
-	
-	
+
+
 	game.write_file(basePath .. "mapInfo.json", json(fm.autorun.mapInfo), false, data.player_index)
 	game.write_file(subPath .. "crop.txt", "v2" .. cropText, false, data.player_index)
-	
+
 end
