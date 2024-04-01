@@ -65,7 +65,7 @@ script.on_event(defines.events.on_tick, function(event)
 			fm.savename = fm.autorun.name or ""
 			fm.topfolder = fm.savename
 
-			if fm.autorun.mapInfo.lastTick ~= nil and fm.autorun.mapInfo.lastTick >= game.tick then
+			if fm.autorun.mapInfo.lastTick ~= nil and fm.autorun.mapInfo.lastTick > game.tick then
 				log("[ERROR] An older map has already been captured on this timeline. Out-of-order capture is not supported. Aborting.")
 				error("An older map has already been captured on this timeline. Out-of-order capture is not supported. Aborting.")
 			end

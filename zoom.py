@@ -13,13 +13,13 @@ from turbojpeg import TurboJPEG
 
 MAX_QUALITY = False  		# Set this to true if you want to compress/postprocess the images yourself later
 
-QUALITY = 80
-BG_QUALITY = 95
+QUALITY = 50
+BG_QUALITY = 90
 
 EXT = ".png"
 OUT_EXT = ".webp"     		# format='JPEG' is hardcoded in places, meed to modify those, too. Most parameters are not supported outside jpeg.
 THUMBNAIL_EXT = ".png"
-BG_EXT = ".png"
+BG_EXT = ".webp"
 
 BACKGROUND_COLOR = (0, 0, 0, 0)
 THUMBNAIL_SCALE = 2
@@ -32,23 +32,8 @@ CHUNKS_PER_BG = 8
 BG_OUT_SIZE = CHUNKS_PER_BG * 32 * 2 # 2 pixels per tile
 
 
-# note that these are all 64 bit libraries since factorio doesnt support 32 bit.
-if os.name == "nt":
-    jpeg = TurboJPEG(Path(__file__, "..", "mozjpeg/turbojpeg.dll").resolve().as_posix())
-# elif _platform == "darwin":						# I'm not actually sure if mac can run linux libraries or not.
-# 	jpeg = TurboJPEG("mozjpeg/libturbojpeg.dylib")	# If anyone on mac has problems with the line below please make an issue :)
-else:
-    jpeg = TurboJPEG(Path(__file__, "..", "mozjpeg/libturbojpeg.so").resolve().as_posix())
-
-
-def saveCompress(img, path: Path):
-    # if MAX_QUALITY:  # do not waste any time compressing the image
-    #     return img.save(path, subsampling=0, quality=100)
-
-    # outFile = path.open("wb")
-    # outFile.write(jpeg.encode(numpy.array(img)[:, :, ::-1].copy()))
-    # outFile.close()
-    img.save(path, "webp")
+def saveCompress(img, path: Path, quality=QUALITY):
+    img.save(path, "webp", alpha_quality=100, quality=quality, method=6, exact=False, lossless=False)
 
 
 def simpleZoom(workQueue):
@@ -492,7 +477,7 @@ def zoom(
                                     path.unlink()
 
                                 result = result.resize((BG_OUT_SIZE, BG_OUT_SIZE), Image.Resampling.LANCZOS)
-                                result.save(Path(imagePath, str(map["path"]), surfaceName, daytime, "bg", f"{key[0]}/{key[1]}{BG_EXT}"))
+                                saveCompress(result, Path(imagePath, str(map["path"]), surfaceName, daytime, "bg", f"{key[0]}/{key[1]}{BG_EXT}"), quality=BG_QUALITY)
 
                                 doneCount += 1
                                 printProgress("bg", float(doneCount) / len(bgImages))

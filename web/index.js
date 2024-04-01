@@ -1,7 +1,7 @@
 "use strict";
 let DEBUG = false;
 const EXT = ".webp";
-const BG_EXT = ".png";
+const BG_EXT = ".webp";
 
 
 
@@ -455,7 +455,7 @@ console.assert(0 <= defaultMapPath && defaultMapPath < mapInfo.maps.length, "Def
 const someSurfaces = mapInfo.maps[defaultMapPath].surfaces;
 let currentSurface = defaultSurface in someSurfaces ? defaultSurface : Object.keys(someSurfaces).sort()[0]
 let loadLayer = someSurfaces[currentSurface].layers;
-let timestamp = (loadLayer.day || loadLayer.night).path;
+let timestamp = (loadLayer.day || loadLayer.night)[0].path;
 
 let startZ = 16, startX = NaN, startY = NaN;
 try {

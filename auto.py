@@ -908,6 +908,8 @@ def auto(*args):
             pass
         copytree(Path(__file__, "..", "web", "lib").resolve(), os.path.join(workfolder, "lib"))
 
+        print(f"done! {(workfolder /  'index.html').resolve().as_posix()}")
+
 
 
     except KeyboardInterrupt:
