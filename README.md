@@ -13,9 +13,9 @@ Make sure to do a select the "add python to PATH" and "install pip" options.
 
 # How to Use
 1. Make sure you close factorio before starting the process.
-1. Navigate to the FactorioMaps folder (`%appdata%\Factorio\mods\FactorioMaps_x.x.x`). Unzip it if you haven't done that already.
-1. Open a command line by typing cmd in the address bar and pressing enter. ![opening cmd](https://user-images.githubusercontent.com/6313423/46446227-6ab5bc00-c77b-11e8-982e-b040f964a778.png)
-1. Run `python auto.py`. Some syntax examples:
+2. Navigate to the FactorioMaps folder (`%appdata%\Factorio\mods\L0laapk3_FactorioMaps`). Unzip it if you haven't done that already.
+3. Open a command line by typing cmd in the address bar and pressing enter. ![opening cmd](https://user-images.githubusercontent.com/6313423/46446227-6ab5bc00-c77b-11e8-982e-b040f964a778.png)
+4. Run `python auto.py`. Some syntax examples:
     * `python auto.py` Generate a snapshot of the latest modified map (autosaves are excluded) and store it to a folder with the same name. If the folder already exists, the snapshot will be appended to the timeline.
     * `python auto.py savename` Generate a snapshot of *savename* and store it to folder *savename*.
     * `python auto.py outfolder savename` Generate a snapshot of *savename* and store it to folder *outfolder*.
@@ -26,7 +26,7 @@ Make sure to do a select the "add python to PATH" and "install pip" options.
     * `python auto.py --verbosegame` Displays *all* game logs.
     * `python auto.py --basepath=PATH` Same as `python auto.py`, but will output to *PATH* instead of `script-output\FactorioMaps`. Not recommended to use.
 
-1. An `index.html` will be created in `%appdata%\Factorio\script-output\FactorioMaps\mapName`. Enjoy!
+5. An `index.html` will be created in `%appdata%\Factorio\script-output\FactorioMaps\mapName`. Enjoy!
 
 # Configuration
 Heres a list of flags that `auto.py` can accept:

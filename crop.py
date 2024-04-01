@@ -14,7 +14,7 @@ ext = ".png"
 
 def work(line, folder, progressQueue):
     arg = line.rstrip("\n").split(" ", 5)
-    path = Path(folder, arg.pop(5))
+    path = Path(folder, arg.pop(5) + ext)
     arg = list(map(int, arg[:4]))
     top, left, width, height = arg
     try:

@@ -11,7 +11,6 @@ from PIL import Image
 from turbojpeg import TurboJPEG
 
 maxQuality = False  		# Set this to true if you want to compress/postprocess the images yourself later
-useBetterEncoder = True 	# Slower encoder that generates smaller images.
 
 quality = 80
 

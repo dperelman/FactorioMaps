@@ -5,10 +5,10 @@ from urllib.parse import urlparse
 from urllib.request import build_opener, install_opener, urlretrieve
 
 URLLIST = (
-	"https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css",
-	"https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet-src.min.js",
-	"https://cdn.jsdelivr.net/npm/leaflet.fullscreen@1.4.5/Control.FullScreen.css",
-	"https://cdn.jsdelivr.net/npm/leaflet.fullscreen@1.4.5/Control.FullScreen.min.js",
+	"https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css",
+	"https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet-src.min.js",
+	"https://cdn.jsdelivr.net/npm/leaflet.fullscreen@3.0.1/Control.FullScreen.css",
+	"https://cdn.jsdelivr.net/npm/leaflet.fullscreen@3.0.1/Control.FullScreen.min.js",
 	"https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js",
 	"https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css",
 	"https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js",
@@ -19,7 +19,7 @@ URLLIST = (
 )
 
 
-CURRENTVERSION = 4
+CURRENTVERSION = 5
 
 
 def update(Force=True):
@@ -55,10 +55,10 @@ def update(Force=True):
 		copytree(tempDir, targetPath)
 		with open(Path(targetPath, "VERSION"), "w") as f:
 			f.write(str(CURRENTVERSION))
-			
+
 		if __name__ == "__main__":
 			input("Press Enter to continue...")
-			
+
 		return True
 
 

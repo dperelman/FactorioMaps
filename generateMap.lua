@@ -66,7 +66,8 @@ function fm.generateMap(data)
 
 	local tilesPerChunk = 32    --hardcoded
 
-	local pixelsPerTile = 32
+	local pixelsPerNonHDTile = 32
+	local pixelsPerTile = pixelsPerNonHDTile
 	if fm.autorun.mapInfo.options.HD then
 		pixelsPerTile = 64   -- HD textures have 64 pixels/tile
 	end
@@ -555,9 +556,28 @@ function fm.generateMap(data)
 
 
 
+	local function take_screenshot(opt)
+		game.take_screenshot({
+			by_player = player,
+			surface = opt.surface,
+			position = opt.position,
+			resolution = opt.resolution,
+			anti_alias = opt.anti_alias,
+			zoom = opt.zoom,
+			path = basePath .. "Images/" .. opt.path .. extension,
+			show_entity_info = opt.alt_mode,
+			force_render = true
+		})
+	end
+
+
 	local cropText = ""
-	local function capture(positionTable, surface, path)
-		local box = { positionTable[1].x, positionTable[1].y, positionTable[2].x, positionTable[2].y } -- -X -Y X Y
+	-- overscan by 16 tiles for any connecting or leaking objects. If necessary, make target screenshot larger and add cropping work to crop.txt
+	local function capture(opt)
+		-- positionTable, surface, path, resolution, zoom, anti_alias
+		opt.path = fm.autorun.filePath .. "/" .. opt.path
+
+		local box = { opt.position[1].x, opt.position[1].y, opt.position[2].x, opt.position[2].y } -- -X -Y X Y
 		local initialBox = { box[1], box[2], box[3], box[4] }
 		local area = {{box[1] - 16, box[2] - 16}, {box[3] + 16, box[4] + 16}}
 
@@ -572,30 +592,45 @@ function fm.generateMap(data)
 				adjustBox(t, box, initialBox, corners)
 			end
 		end
-		if box[1] < positionTable[1].x or box[2] < positionTable[1].y or box[3] > positionTable[2].x or box[4] > positionTable[2].y then
-			cropText = cropText .. "\n" .. (positionTable[1].x - box[1])*pixelsPerTile .. " " .. (positionTable[1].y - box[2])*pixelsPerTile .. " " .. (positionTable[2].x - positionTable[1].x)*pixelsPerTile .. " " .. (positionTable[2].y - positionTable[1].y)*pixelsPerTile .. " " .. string.format("%x", corners[1] + 2*corners[2] + 4*corners[3] + 8*corners[4]) .. " " .. path
+		if box[1] < opt.position[1].x or box[2] < opt.position[1].y or box[3] > opt.position[2].x or box[4] > opt.position[2].y then
+			cropText = cropText .. "\n" .. (opt.position[1].x - box[1])*pixelsPerTile .. " " .. (opt.position[1].y - box[2])*pixelsPerTile .. " " .. (opt.position[2].x - opt.position[1].x)*pixelsPerTile .. " " .. (opt.position[2].y - opt.position[1].y)*pixelsPerTile .. " " .. string.format("%x", corners[1] + 2*corners[2] + 4*corners[3] + 8*corners[4]) .. " " .. opt.path
 		end
 
-		game.take_screenshot({
-			by_player = player,
-			surface = surface,
-			position = {(box[1] + box[3]) / 2, (box[2] + box[4]) / 2},
-			resolution = {(box[3] - box[1])*pixelsPerTile, (box[4] - box[2])*pixelsPerTile},
-			zoom = fm.autorun.mapInfo.options.HD and 2 or 1,
-			path = basePath .. "Images/" .. path,
-			show_entity_info = fm.autorun.alt_mode
+		local zoom = 1
+		local res = pixelsPerTile
+		local anti_alias = false
+		local show_entity_info = fm.autorun.alt_mode
+		if opt.small then
+			anti_alias = true
+			res = pixelsPerNonHDTile / 2
+			show_entity_info = false
+			zoom = 0.5
+		elseif fm.autorun.mapInfo.options.HD then
+			zoom = 2
+		end
+
+		take_screenshot({
+			surface = opt.surface,
+			position = { (box[1] + box[3]) / 2, (box[2] + box[4]) / 2 },
+			resolution = { (box[3] - box[1]) * res, (box[4] - box[2]) * res },
+			zoom = zoom,
+			anti_alias = anti_alias,
+			path = opt.path,
+			show_entity_info = show_entity_info
 		})
 	end
 
 
 
 	for _, chunk in pairs(allGrid) do
-		local positionTable = {
-			{ x =  chunk.x    * gridPixelSize, y =  chunk.y    * gridPixelSize  },
-			{ x = (chunk.x+1) * gridPixelSize, y = (chunk.y+1) * gridPixelSize  }
-		}
-
-		capture(positionTable, fm.currentSurface, fm.autorun.filePath .. "/" .. fm.currentSurface.name .. "/" .. fm.autorun.daytime .. "/" .. maxZoom .. "/" .. chunk.x .. "/" .. chunk.y .. extension)
+		capture({
+			surface = fm.currentSurface,
+			position = {
+				{ x =  chunk.x    * gridPixelSize, y =  chunk.y    * gridPixelSize  },
+				{ x = (chunk.x+1) * gridPixelSize, y = (chunk.y+1) * gridPixelSize  }
+			},
+			path = fm.currentSurface.name .. "/" .. fm.autorun.daytime .. "/" .. maxZoom .. "/" .. chunk.x .. "/" .. chunk.y
+		})
 	end
 
 
@@ -611,7 +646,7 @@ function fm.generateMap(data)
 	while #linkWorkList > 0 do
 		local link = table.remove(linkWorkList)
 
-		local folder = fm.autorun.filePath .. "/" .. link.toSurface .. "/" .. fm.autorun.daytime .. "/" .. "renderboxes" .. "/"
+		local folder = link.toSurface .. "/" .. fm.autorun.daytime .. "/" .. "renderboxes" .. "/"
 		local filename = link.to[1].x .. "_" .. link.to[1].y .. "_" .. link.to[2].x .. "_" .. link.to[2].y
 		local path = folder .. maxZoom .. "/"  .. filename
 
@@ -624,7 +659,11 @@ function fm.generateMap(data)
 
 		if doneLinkPaths[path] == nil then
 			if link.daynight or not link.filename then
-				capture(link.to, link.toSurface, path .. extension)
+				capture({
+					surface = link.toSurface,
+					position = link.to,
+					path = path
+				})
 				link.filename = filename
 				link.zoom = { max = maxZoom }
 
@@ -637,6 +676,33 @@ function fm.generateMap(data)
 		end
 	end
 
+
+	-- background factorio chunk capture
+	for chunk in fm.currentSurface.get_chunks() do
+		if fm.currentSurface.is_chunk_generated(chunk) then
+
+			-- -- filter out chunks that are fully covered by high resolution snapshots
+			-- local doCapture = false
+			-- for gridX = chunk.x * tilesPerChunk / gridPixelSize, (chunk.x + 1) * tilesPerChunk / gridPixelSize - 1 do
+			-- 	for gridY = chunk.y * tilesPerChunk / gridPixelSize, (chunk.y + 1) * tilesPerChunk / gridPixelSize - 1 do
+			-- 		if allGrid[gridX .. " " .. gridY] == nil then
+			-- 			doCapture = true
+			-- 			break
+			-- 		end
+			-- 	end
+			-- 	if doCapture then
+			-- 		break
+			-- 	end
+			-- end
+
+			capture({
+				surface = fm.currentSurface,
+				position = { chunk.area.left_top, chunk.area.right_bottom },
+				path = fm.currentSurface.name .. "/" .. fm.autorun.daytime .. "/bg/" .. chunk.x .. "/" .. chunk.y,
+				small = true
+			})
+		end
+	end
 
 
 	game.write_file(basePath .. "mapInfo.json", json(fm.autorun.mapInfo), false, data.player_index)
