@@ -594,9 +594,6 @@ function fm.generateMap(data)
 				adjustBox(t, box, initialBox, corners)
 			end
 		end
-		if box[1] < opt.position[1].x or box[2] < opt.position[1].y or box[3] > opt.position[2].x or box[4] > opt.position[2].y then
-			cropText = cropText .. "\n" .. (opt.position[1].x - box[1])*pixelsPerTile .. " " .. (opt.position[1].y - box[2])*pixelsPerTile .. " " .. (opt.position[2].x - opt.position[1].x)*pixelsPerTile .. " " .. (opt.position[2].y - opt.position[1].y)*pixelsPerTile .. " " .. string.format("%x", corners[1] + 2*corners[2] + 4*corners[3] + 8*corners[4]) .. " " .. opt.path
-		end
 
 		local zoom = 1
 		local res = pixelsPerTile
@@ -609,6 +606,10 @@ function fm.generateMap(data)
 			zoom = 0.5
 		elseif fm.autorun.mapInfo.options.HD then
 			zoom = 2
+		end
+
+		if box[1] < opt.position[1].x or box[2] < opt.position[1].y or box[3] > opt.position[2].x or box[4] > opt.position[2].y then
+			cropText = cropText .. "\n" .. (opt.position[1].x - box[1]) * res .. " " .. (opt.position[1].y - box[2]) * res .. " " .. (opt.position[2].x - opt.position[1].x) * res .. " " .. (opt.position[2].y - opt.position[1].y) * res .. " " .. string.format("%x", corners[1] + 2*corners[2] + 4*corners[3] + 8*corners[4]) .. " " .. opt.path
 		end
 
 		take_screenshot({
@@ -682,21 +683,6 @@ function fm.generateMap(data)
 	-- background factorio chunk capture
 	for chunk in fm.currentSurface.get_chunks() do
 		if fm.currentSurface.is_chunk_generated(chunk) then
-
-			-- -- filter out chunks that are fully covered by high resolution snapshots
-			-- local doCapture = false
-			-- for gridX = chunk.x * tilesPerChunk / gridPixelSize, (chunk.x + 1) * tilesPerChunk / gridPixelSize - 1 do
-			-- 	for gridY = chunk.y * tilesPerChunk / gridPixelSize, (chunk.y + 1) * tilesPerChunk / gridPixelSize - 1 do
-			-- 		if allGrid[gridX .. " " .. gridY] == nil then
-			-- 			doCapture = true
-			-- 			break
-			-- 		end
-			-- 	end
-			-- 	if doCapture then
-			-- 		break
-			-- 	end
-			-- end
-
 			capture({
 				surface = fm.currentSurface,
 				position = { chunk.area.left_top, chunk.area.right_bottom },

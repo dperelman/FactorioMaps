@@ -232,7 +232,7 @@ def work(basepath, pathList, surfaceName, daytime, size, start, stop, last, chun
             chunksize = chunksize // 2
     elif stop == last:
         path = Path(basepath, pathList[0], surfaceName, daytime, str(start), str(chunk[0]), str(chunk[1]))
-        img = Image.open(path.with_suffix(EXT), mode="r").convert("RGB")
+        img = Image.open(path.with_suffix(EXT), mode="r").convert("RGBA")
         saveCompress(img, path.with_suffix(OUT_EXT))
         path.with_suffix(EXT).unlink()
 
@@ -425,7 +425,7 @@ def zoom(
                                         raise Exception("Missing imageSize for thumbnail generation")
 
                                     thumbnail = Image.new(
-                                        "RGB",
+                                        "RGBA",
                                         (
                                             (maxX - minX + 1) * imageSize >> maxzoom-minzoom,
                                             (maxY - minY + 1) * imageSize >> maxzoom-minzoom,
@@ -444,7 +444,7 @@ def zoom(
                                                 yOffset + (chunk[1] - bigMinY) * imageSize,
                                             ),
                                             im=Image.open(path, mode="r")
-                                            .convert("RGB")
+                                            .convert("RGBA")
                                             .resize((imageSize, imageSize), Image.Resampling.LANCZOS),
                                         )
 
@@ -458,6 +458,7 @@ def zoom(
 
 
                             # TODO: MULTITHREAD THIS
+
                             printProgress("bg", 0)
 
                             bgImages = {}
@@ -477,10 +478,10 @@ def zoom(
 
                             doneCount = 0
                             for key, subImages in bgImages.items():
-                                result = Image.new("RGB", (BG_IN_SIZE * CHUNKS_PER_BG, BG_IN_SIZE * CHUNKS_PER_BG), BACKGROUND_COLOR)
+                                result = Image.new("RGBA", (BG_IN_SIZE * CHUNKS_PER_BG, BG_IN_SIZE * CHUNKS_PER_BG), BACKGROUND_COLOR)
                                 for subX, subY in subImages:
                                     path = Path(imagePath, str(map["path"]), surfaceName, daytime, "bg", str(key[0]), f"{key[1]}_{subX}_{subY}{EXT}")
-                                    img = Image.open(path, mode="r").convert("RGB")
+                                    img = Image.open(path, mode="r").convert("RGBA")
                                     result.paste(
                                         box=(
                                             subX * BG_IN_SIZE,

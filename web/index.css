@@ -163,8 +163,11 @@ hr.clear {
 }
 
 .leaflet-overlay-pane > img,
-.map-layer img.leaflet-tile.leaflet-tile-loaded {
+img.leaflet-tile.leaflet-tile-loaded {
 	image-rendering: pixelated;
+}
+.bg-layer img.leaflet-tile.leaflet-tile-loaded {
+	filter: blur(1px);
 }
 
 

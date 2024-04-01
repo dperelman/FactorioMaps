@@ -74,7 +74,7 @@ def startGameAndReadGameLogs(results, condition, exeWithArgs, isSteam, tmpDir, p
         # First line should be the factorio version print. Otherwise something might be seriously wrong.
         if isFirstLine and not re.match(r'^ *\d+\.\d{3} \d{4}-\d\d-\d\d \d\d:\d\d:\d\d; Factorio (\d+\.\d+\.\d+) \(build (\d+), [^)]+\)$', line):
             suggestion = "maybe your version is outdated or too new?"
-            if line.endswith('Error Util.cpp:83: weakly_canonical: Incorrect function.'):
+            if re.match(r'Error Util\.cpp:\d+: weakly_canonical: Incorrect function\.', line):
                 suggestion = "maybe your temp directory is on a ramdisk?"
             raise RuntimeError(f"Unrecognised output from factorio ({suggestion})\n\nOutput from factorio:\n{line}")
 
