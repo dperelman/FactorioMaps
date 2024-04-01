@@ -552,7 +552,7 @@ def auto(*args):
         if args.day:
             daytimes.append("day")
         if args.night:
-        	daytimes.append("night")
+            daytimes.append("night")
 
         for index, savename in () if args.dry else enumerate(saveGames):
             for daytimeIndex, setDaytime in enumerate(daytimes):
