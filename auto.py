@@ -401,7 +401,7 @@ def auto(*args):
     daytime = parser.add_mutually_exclusive_group()
     daytime.add_argument("--dayonly", dest="night", action="store_false", help="Only take daytime screenshots.")
     daytime.add_argument("--nightonly", dest="day", action="store_false", help="Only take nighttime screenshots.")
-    parser.add_argument("--hd", action="store_true", help="Take screenshots of resolution 64 x 64 pixels per in-game tile.")
+    parser.add_argument("--hd", action="store_true", default=True, help="Take screenshots of resolution 64 x 64 pixels per in-game tile.")
     parser.add_argument("--no-altmode", dest="altmode", action="store_false", help="Hides entity info (alt mode).")
     parser.add_argument("--no-tags", dest="tags", action="store_false", help="Hides map tags")
     parser.add_argument("--default-timestamp", type=int, default=None, dest="default_timestamp", help="Snapshot that will be loaded by the webpage by default. Negative values indicate newest snapshots, so -1 indicates the newest map while 0 indicates the oldest map.")
