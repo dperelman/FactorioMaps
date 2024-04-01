@@ -75,9 +75,9 @@ def startGameAndReadGameLogs(results, condition, exeWithArgs, isSteam, tmpDir, p
 
     prevPrinted = False
     prevTag = None
-    def handleGameLine(line, isFirst):
+    def handleGameLine(line, isFirstLine):
         # First line should be the factorio version print. Otherwise something might be seriously wrong.
-        if isFirst and not re.match(r'^ *\d+\.\d{3} \d{4}-\d\d-\d\d \d\d:\d\d:\d\d; Factorio (\d+\.\d+\.\d+) \(build (\d+), [^)]+\)$', line):
+        if isFirstLine and not re.match(r'^ *\d+\.\d{3} \d{4}-\d\d-\d\d \d\d:\d\d:\d\d; Factorio (\d+\.\d+\.\d+) \(build (\d+), [^)]+\)$', line):
             suggestion = "maybe your version is outdated or too new?"
             if line.endswith('Error Util.cpp:83: weakly_canonical: Incorrect function.'):
                 suggestion = "maybe your temp directory is on a ramdisk?"
@@ -276,31 +276,46 @@ def changeModlist(modpath: Path,newState: bool):
         json.dump(modlist, f, indent=2)
 
 
-def convertJSONFileToLua(path: Path):
+def openJSONFile(path: Path):
     if not path.is_file():
-        return "{}"
+        return {}
     with path.open("r", encoding="utf-8") as f:
-        return re.sub(
-            r'"([^"]+)" *:',
-            lambda m: '["'+m.group(1)+'"] = ',
-            re.sub(
-                r'("(?:\\"|[^"])*")([^"]*)',
-                lambda m: m.group(1) + m.group(2).replace("[", "{").replace("]", "}"),
-                f.read()
-        ))
+        return json.load(f)
+
+def convertJSONToLua(jsonStr: dict):
+    return re.sub(
+        r'"([^"]+)" *:',
+        lambda m: '["'+m.group(1)+'"] = ',
+        re.sub(
+            r'("(?:\\"|[^"])*")([^"]*)',
+            lambda m: m.group(1) + m.group(2).replace("[", "{").replace("]", "}"),
+            json.dumps(jsonStr)
+    ))
 
 
 AUTORUN_PATH = Path(__file__, "..", "autorun.lua").resolve()
 def clearAutorun():
+    # make file empty
     AUTORUN_PATH.open('w', encoding="utf-8").close()
 
-def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstSnapshot: bool, daytime: str):
+def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstCapture: bool, daytime: str):
     printErase("Building autorun.lua")
-    mapInfoLua = convertJSONFileToLua(Path(workFolder, "mapInfo.json"))
 
-    isFirstSnapshot = False
+    mapInfoPath = Path(workFolder, "mapInfo.json")
+    mapInfo = openJSONFile(mapInfoPath)
 
-    chunkCache = convertJSONFileToLua(Path(workFolder, "chunkCache.json"))
+    if isFirstCapture and "processingInProgress" in mapInfo and mapInfo["processingInProgress"]:
+        raise Exception("Previous processing did not finish correctly. Your timeline is considered bricked.", "Please start over the timeline by deleting the output folder manually or with `--delete`.")
+
+    mapInfo["processingInProgress"] = True
+
+    if isFirstCapture:
+        with mapInfoPath.open("w+", encoding='utf-8') as f:
+            json.dump(mapInfo, f)
+
+    mapInfoLua = convertJSONToLua(mapInfo)
+
+    chunkCache = convertJSONToLua(openJSONFile(Path(workFolder, "chunkCache.json")))
 
     def lowerBool(value: bool):
         return str(value).lower()
@@ -510,6 +525,13 @@ def auto(*args):
         workfolderPrintable = workfolder.resolve()
     print(f"output folder: `{workfolderPrintable}`")
 
+    if args.delete:
+        print(f"Deleting output folder")
+        try:
+            rmtree(workfolder)
+        except (FileNotFoundError, NotADirectoryError):
+            pass
+
     try:
         workfolder.mkdir(parents=True, exist_ok=True)
     except FileExistsError:
@@ -528,13 +550,6 @@ def auto(*args):
     rawTags = manager.dict()
     rawTags["__used"] = False
 
-    if args.delete:
-        print(f"Deleting output folder")
-        try:
-            rmtree(workfolder)
-        except (FileNotFoundError, NotADirectoryError):
-            pass
-
 
     ###########################################
     #                                         #
@@ -544,8 +559,6 @@ def auto(*args):
 
     datapath = Path(workfolder, "latest.txt")
 
-    isFirstSnapshot = True
-
     try:
 
         daytimes = []
@@ -554,15 +567,17 @@ def auto(*args):
         if args.night:
             daytimes.append("night")
 
+        capturesDone = 0
+
         for index, savename in () if args.dry else enumerate(saveGames):
             for daytimeIndex, setDaytime in enumerate(daytimes):
+                capturesDone += 1
 
                 printErase("cleaning up")
                 if datapath.is_file():
                     datapath.unlink()
 
-                buildAutorun(args, workfolder, foldername, isFirstSnapshot, setDaytime)
-                isFirstSnapshot = False
+                buildAutorun(args, workfolder, foldername, capturesDone == 1, setDaytime)
 
                 if args.temp_dir is not None:
                     try:
@@ -792,7 +807,7 @@ def auto(*args):
                     }
                 else:
                     if force:
-                        raise "tag not found."
+                        raise Exception("tag not found.")
                     else:
                         print(f"[WARNING] tag \"{index}\" not found.")
             with Path(workfolder, "mapInfo.json").open('r+', encoding='utf-8') as mapInfoJson:
@@ -870,9 +885,10 @@ def auto(*args):
                 if args.default_timestamp == None:
                     args.default_timestamp = -1
                 mapInfo["options"]["defaultTimestamp"] = args.default_timestamp
-                f.seek(0)
-                json.dump(mapInfo, f)
-                f.truncate()
+            mapInfo["processingInProgress"] = False
+            f.seek(0)
+            json.dump(mapInfo, f)
+            f.truncate()
 
 
 

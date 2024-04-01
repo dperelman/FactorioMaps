@@ -89,6 +89,7 @@
       "Fix several issues with special characters in tags"
     ],
     "4.5.0": [
-      "!Prevent breaking timeline by capturing saves out-of-order."
+      "!Prevent breaking timeline by capturing saves out-of-order.",
+      "Check if timeline is bricked instead of blindly working on it."
     ]
 }
