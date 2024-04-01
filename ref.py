@@ -9,8 +9,8 @@ from print import print, printProgress
 
 
 
-ext = ".png"
-outext = ".jpg"
+EXT = ".png"
+OUT_EXT = ".webp"
 
 
 
@@ -29,7 +29,7 @@ def test(paths):
 def compare(path, basePath, new, progressQueue):
     testResult = False
     try:
-        testResult = test((os.path.join(basePath, new, *path[1:]), os.path.join(basePath, *path).replace(ext, outext)))
+        testResult = test((os.path.join(basePath, new, *path[1:]), os.path.join(basePath, *path).replace(EXT, OUT_EXT)))
     except:
         print("\r")
         traceback.print_exc()
@@ -40,10 +40,10 @@ def compare(path, basePath, new, progressQueue):
     return (testResult, path[1:])
 
 def compareRenderbox(renderbox, basePath, new):
-    newPath = os.path.join(basePath, new, renderbox[0]) + ext
+    newPath = os.path.join(basePath, new, renderbox[0]) + EXT
     testResult = False
     try:
-        testResult = test((newPath, os.path.join(basePath, renderbox[1], renderbox[0]) + outext))
+        testResult = test((newPath, os.path.join(basePath, renderbox[1], renderbox[0]) + OUT_EXT))
     except:
         print("\r")
         raise
@@ -60,14 +60,14 @@ def neighbourScan(coord, keepList, cropList):
         """
         surfaceName, daytime, z = coord[:3]
         x, y = int(coord[3]), int(os.path.splitext(coord[4])[0])
-        return (((surfaceName, daytime, z, str(x+1), str(y+1) + ext) in keepList and cropList.get((surfaceName, daytime, z, x+1, y+1), 0) & 0b1000) \
-             or ((surfaceName, daytime, z, str(x+1), str(y-1) + ext) in keepList and cropList.get((surfaceName, daytime, z, x+1, y-1), 0) & 0b0100) \
-             or ((surfaceName, daytime, z, str(x-1), str(y+1) + ext) in keepList and cropList.get((surfaceName, daytime, z, x-1, y+1), 0) & 0b0010) \
-             or ((surfaceName, daytime, z, str(x-1), str(y-1) + ext) in keepList and cropList.get((surfaceName, daytime, z, x-1, y-1), 0) & 0b0001) \
-             or ((surfaceName, daytime, z, str(x+1), str(y  ) + ext) in keepList and cropList.get((surfaceName, daytime, z, x+1, y  ), 0) & 0b1100) \
-             or ((surfaceName, daytime, z, str(x-1), str(y  ) + ext) in keepList and cropList.get((surfaceName, daytime, z, x-1, y  ), 0) & 0b0011) \
-             or ((surfaceName, daytime, z, str(x  ), str(y+1) + ext) in keepList and cropList.get((surfaceName, daytime, z, x  , y+1), 0) & 0b1010) \
-             or ((surfaceName, daytime, z, str(x  ), str(y-1) + ext) in keepList and cropList.get((surfaceName, daytime, z, x  , y-1), 0) & 0b0101), coord)
+        return (((surfaceName, daytime, z, str(x+1), str(y+1) + EXT) in keepList and cropList.get((surfaceName, daytime, z, x+1, y+1), 0) & 0b1000) \
+             or ((surfaceName, daytime, z, str(x+1), str(y-1) + EXT) in keepList and cropList.get((surfaceName, daytime, z, x+1, y-1), 0) & 0b0100) \
+             or ((surfaceName, daytime, z, str(x-1), str(y+1) + EXT) in keepList and cropList.get((surfaceName, daytime, z, x-1, y+1), 0) & 0b0010) \
+             or ((surfaceName, daytime, z, str(x-1), str(y-1) + EXT) in keepList and cropList.get((surfaceName, daytime, z, x-1, y-1), 0) & 0b0001) \
+             or ((surfaceName, daytime, z, str(x+1), str(y  ) + EXT) in keepList and cropList.get((surfaceName, daytime, z, x+1, y  ), 0) & 0b1100) \
+             or ((surfaceName, daytime, z, str(x-1), str(y  ) + EXT) in keepList and cropList.get((surfaceName, daytime, z, x-1, y  ), 0) & 0b0011) \
+             or ((surfaceName, daytime, z, str(x  ), str(y+1) + EXT) in keepList and cropList.get((surfaceName, daytime, z, x  , y+1), 0) & 0b1010) \
+             or ((surfaceName, daytime, z, str(x  ), str(y-1) + EXT) in keepList and cropList.get((surfaceName, daytime, z, x  , y-1), 0) & 0b0101), coord)
 
 
 
@@ -206,7 +206,7 @@ def ref(
                             path = os.path.join(topPath, "Images", data["maps"][old]["path"], surfaceName, daytime, str(z))
                             for x in os.listdir(path):
                                 for y in os.listdir(os.path.join(path, x)):
-                                    oldImages[(x, y.replace(ext, outext))] = data["maps"][old]["path"]
+                                    oldImages[(x, y.replace(EXT, OUT_EXT))] = data["maps"][old]["path"]
 
                     if daytime != "day":
                         if not os.path.isfile(os.path.join(topPath, "Images", newMap["path"], surfaceName, "day", "ref.txt")):
@@ -225,10 +225,10 @@ def ref(
                     path = os.path.join(topPath, "Images", newMap["path"], surfaceName, daytime, str(z))
                     for x in os.listdir(path):
                         for y in os.listdir(os.path.join(path, x)):
-                            if (x, os.path.splitext(y)[0]) in dayImages or (x, y.replace(ext, outext)) not in oldImages:
+                            if (x, os.path.splitext(y)[0]) in dayImages or (x, y.replace(EXT, OUT_EXT)) not in oldImages:
                                 keepList.append((surfaceName, daytime, str(z), x, y))
-                            elif (x, y.replace(ext, outext)) in oldImages:
-                                compareList.append((oldImages[(x, y.replace(ext, outext))], surfaceName, daytime, str(z), x, y))
+                            elif (x, y.replace(EXT, OUT_EXT)) in oldImages:
+                                compareList.append((oldImages[(x, y.replace(EXT, OUT_EXT))], surfaceName, daytime, str(z), x, y))
 
 
 

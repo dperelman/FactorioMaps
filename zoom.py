@@ -17,11 +17,11 @@ QUALITY = 80
 BG_QUALITY = 95
 
 EXT = ".png"
-OUT_EXT = ".jpg"     		# format='JPEG' is hardcoded in places, meed to modify those, too. Most parameters are not supported outside jpeg.
+OUT_EXT = ".webp"     		# format='JPEG' is hardcoded in places, meed to modify those, too. Most parameters are not supported outside jpeg.
 THUMBNAIL_EXT = ".png"
 BG_EXT = ".png"
 
-BACKGROUND_COLOR = (27, 45, 51)
+BACKGROUND_COLOR = (0, 0, 0, 0)
 THUMBNAIL_SCALE = 2
 
 MIN_RENDERBOX_SIZE = 8
@@ -29,7 +29,7 @@ MIN_RENDERBOX_SIZE = 8
 
 BG_IN_SIZE = 512
 CHUNKS_PER_BG = 8
-BG_OUT_SIZE = CHUNKS_PER_BG * 32 // 2 # 0.5 pixels per tile
+BG_OUT_SIZE = CHUNKS_PER_BG * 32 * 2 # 2 pixels per tile
 
 
 # note that these are all 64 bit libraries since factorio doesnt support 32 bit.
@@ -42,18 +42,19 @@ else:
 
 
 def saveCompress(img, path: Path):
-    if MAX_QUALITY:  # do not waste any time compressing the image
-        return img.save(path, subsampling=0, quality=100)
+    # if MAX_QUALITY:  # do not waste any time compressing the image
+    #     return img.save(path, subsampling=0, quality=100)
 
-    outFile = path.open("wb")
-    outFile.write(jpeg.encode(numpy.array(img)[:, :, ::-1].copy()))
-    outFile.close()
+    # outFile = path.open("wb")
+    # outFile.write(jpeg.encode(numpy.array(img)[:, :, ::-1].copy()))
+    # outFile.close()
+    img.save(path, "webp")
 
 
 def simpleZoom(workQueue):
     for (folder, start, stop, filename) in workQueue:
         path = Path(folder, str(start), filename)
-        img = Image.open(path.with_suffix(EXT), mode="r").convert("RGB")
+        img = Image.open(path.with_suffix(EXT), mode="r").convert("RGBA")
         if OUT_EXT != EXT:
             saveCompress(img, path.with_suffix(OUT_EXT))
             path.with_suffix(EXT).unlink()
@@ -199,12 +200,12 @@ def work(basepath, pathList, surfaceName, daytime, size, start, stop, last, chun
                                     if paths[m].is_file():
                                         break
 
-                        result = Image.new("RGB", (size, size), BACKGROUND_COLOR)
+                        result = Image.new("RGBA", (size, size), BACKGROUND_COLOR)
 
                         images = []
                         for m in range(len(coords)):
                             if paths[m].is_file():
-                                img = Image.open(paths[m], mode="r").convert("RGB")
+                                img = Image.open(paths[m], mode="r").convert("RGBA")
                                 result.paste(
                                     box=(
                                         coords[m][0] * size // 2,

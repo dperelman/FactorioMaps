@@ -1,6 +1,6 @@
 "use strict";
 let DEBUG = false;
-const EXT = ".jpg";
+const EXT = ".webp";
 const BG_EXT = ".png";
 
 
@@ -12,18 +12,21 @@ let COORDSCALE = 2**19 / 16 * window.devicePixelRatio;
 //let _getTileUrl = L.TileLayer.prototype.getTileUrl;
 //L.TileLayer.prototype.getTileUrl = function(coords) { return _getTileUrl.call(this, {x: coords.x - 1 * Math.pow(2, coords.z - 2), y: coords.y, z: coords.z}); };
 
-L.TileLayer.prototype.getTileUrl = function(c) {
-	if (this.bg)
-		return `Images/${this.path}/${this.surface}/${this.daytime}/bg/${c.x}/${c.y}${BG_EXT}`
-
-	let mapIndex = this.tileIndex[c.z] && this.tileIndex[c.z][c.y] && this.tileIndex[c.z][c.y][c.x];
-	if (isNaN(mapIndex))
-		mapIndex = this.tileIndex.fallback;
-	if (!this.bg) {
+class FGTileLayer extends L.TileLayer {
+	getTileUrl(c) {
+		let mapIndex = this.tileIndex[c.z] && this.tileIndex[c.z][c.y] && this.tileIndex[c.z][c.y][c.x];
+		if (isNaN(mapIndex))
+			mapIndex = this.tileIndex.fallback;
 		if (isNaN(mapIndex))
 			return "";
+		return `Images/${mapInfo.maps[mapIndex].path}/${this.surface}/${this.daytime}/${c.z}/${c.x}/${c.y}${EXT}`
 	}
-	return `Images/${mapInfo.maps[mapIndex].path}/${this.surface}/${this.daytime}/${this.bg ? "bg" : c.z}/${c.x}/${c.y}${this.bg ? BG_EXT : EXT}`
+}
+
+class BGTileLayer extends L.TileLayer {
+	getTileUrl(c) {
+		return `Images/${this.path}/${this.surface}/${this.daytime}/bg/${c.x}/${c.y}${BG_EXT}`
+	}
 }
 
 //TODO: iterate over surfaces
@@ -225,21 +228,21 @@ for (let i = 0; i < mapInfo.maps.length; i++) {
 				if (!(maxZoom <= globalMaxZoom))
 					globalMaxZoom = maxZoom;
 
-				let LBGLayer = L.tileLayer(undefined, {
+				let LBGLayer = new BGTileLayer(undefined, {
 					id: `${layer.path}-bg`,
 					attribution: '<a href="https://github.com/L0laapk3/FactorioMaps">FactorioMaps</a>',
 					minZoom: 14,
 					maxZoom: 23,
-					minNativeZoom: 14,
-					maxNativeZoom: 14,
+					minNativeZoom: 16,
+					maxNativeZoom: 16,
 					noWrap: true,
-					tileSize: 128 / window.devicePixelRatio,
+					tileSize: 512 / window.devicePixelRatio,
 					keepBuffer: 99,
 					zIndex: 1,
 					className: "bg-layer",
 				});
 				LBGLayer.bg = true;
-				let LLayer = L.tileLayer(undefined, {
+				let LLayer = new FGTileLayer(undefined, {
 					id: layer.path,
 					attribution: '<a href="https://github.com/L0laapk3/FactorioMaps">FactorioMaps</a>',
 					minNativeZoom: DEBUG ? 20 : layer.zoom.min,
