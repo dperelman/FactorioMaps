@@ -27,7 +27,6 @@ import configparser
 import datetime
 import json
 import errno
-import math
 import multiprocessing as mp
 import re
 import string
@@ -41,7 +40,6 @@ import urllib.parse
 import urllib.request
 from argparse import Namespace
 from shutil import copy, copytree
-from shutil import get_terminal_size as tsize
 from shutil import rmtree
 from socket import timeout
 from zipfile import ZipFile
@@ -53,20 +51,17 @@ from crop import crop
 from ref import ref
 from updateLib import update as updateLib
 from zoom import zoom, zoomRenderboxes
+from print import print
+
+
 
 userFolder = Path(__file__, "..", "..", "..").resolve()
+
 
 def naturalSort(l):
     convert = lambda text: int(text) if text.isdigit() else text.lower()
     alphanum_key = lambda key: [ convert(c) for c in re.split(r'(\d+)', key) ]
     return sorted(l, key = alphanum_key)
-
-def printErase(arg):
-    try:
-        tsiz = tsize()[0]
-        print("\r{}{}\n".format(arg, " " * (tsiz*math.ceil(len(arg)/tsiz)-len(arg) - 1)), end="", flush=True)
-    except:
-        raise
 
 
 def startGameAndReadGameLogs(results, condition, exeWithArgs, isSteam, tmpDir, pidBlacklist, rawTags, args):
@@ -89,12 +84,12 @@ def startGameAndReadGameLogs(results, condition, exeWithArgs, isSteam, tmpDir, p
         nonlocal prevPrinted, prevTag
         if re.match(r'^\ *\d+(?:\.\d+)? *[^\n]*$', line) is None:
             if prevPrinted:
-                printErase(f"[{prevTag}] {line}")
+                print(f"[{prevTag}] {line}")
             return
         prevPrinted = False
         def printLine(line, tag="GAME"):
             nonlocal prevPrinted, prevTag
-            printErase(f"[{tag}] {line}")
+            print(f"[{tag}] {line}")
             prevPrinted = True
             prevTag = tag
 
@@ -127,7 +122,7 @@ def startGameAndReadGameLogs(results, condition, exeWithArgs, isSteam, tmpDir, p
     with os.fdopen(pipeOut, 'r') as pipef:
 
         if isSteam:
-            printErase("using steam launch hack")
+            print("using steam launch hack")
 
             attrs = ('pid', 'name', 'create_time')
 
@@ -233,7 +228,7 @@ def checkUpdate(reverseUpdateTest:bool = False):
             exit(1)
 
     except (urllib.error.URLError, timeout) as e:
-        print("Failed to check for updates. %s: %s" % (type(e).__name__, e))
+        print(f"Failed to check for updates. {type(e).__name__}: {e}")
 
 
 def linkDir(src: Path, dest:Path):
@@ -299,7 +294,7 @@ def clearAutorun():
     AUTORUN_PATH.open('w', encoding="utf-8").close()
 
 def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstCapture: bool, daytime: str):
-    printErase("Building autorun.lua")
+    print("Building autorun.lua")
 
     mapInfoPath = Path(workFolder, "mapInfo.json")
     mapInfo = openJSONFile(mapInfoPath)
@@ -340,11 +335,11 @@ def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstCapt
             }}'''
         f.write(autorunString)
         if args.verbose:
-            printErase(autorunString)
+            print(autorunString)
 
 
 def buildConfig(args: Namespace, tmpDir, basepath):
-    printErase("Building config.ini")
+    print("Building config.ini")
     if args.verbose > 2:
         print(f"Using temporary directory '{tmpDir}'")
     configPath = Path(tmpDir, "config","config.ini")
@@ -393,7 +388,7 @@ def auto(*args):
                     while psutil.pid_exists(pid):
                         time.sleep(0.1)
 
-                    printErase("killed factorio")
+                    print("killed factorio")
 
         time.sleep(10)
 
@@ -474,7 +469,7 @@ def auto(*args):
     elif len(saveGames) > 1:
         print(f"Will generate snapshots in this order: (Will not work if this order is not chronological!)")
         for i in range(len(saveGames)):
-            print(f"{i+1}:\t{saveGames[i]}")
+            print(f"{i+1:>4}: {saveGames[i]}")
 
     if args.factorio:
         possibleFactorioPaths = [args.factorio]
@@ -578,7 +573,7 @@ def auto(*args):
             for daytimeIndex, setDaytime in enumerate(daytimes):
                 capturesDone += 1
 
-                printErase("cleaning up")
+                print("cleaning up")
                 if datapath.is_file():
                     datapath.unlink()
 
@@ -645,12 +640,12 @@ def auto(*args):
                         ] + launchArgs
 
                     if args.verbose:
-                        printErase(exeWithArgs)
+                        print(exeWithArgs)
 
                     condition = mp.Condition()
                     results = manager.list()
 
-                    printErase("starting factorio")
+                    print("starting factorio")
                     startLogProcess = mp.Process(
                         target=startGameAndReadGameLogs,
                         args=(results, condition, exeWithArgs, usedSteamLaunchHack, tmpDir, pidBlacklist, rawTags, args)
@@ -677,7 +672,7 @@ def auto(*args):
                         for line in f:
                             latest.append(line.rstrip("\n"))
                     if args.verbose:
-                        printErase(latest)
+                        print(latest)
 
                     firstOutFolder, timestamp, surface, daytime = latest[-1].split(" ")
                     firstOutFolder = firstOutFolder.replace("/", " ")
@@ -732,7 +727,7 @@ def auto(*args):
                             zoom(outFolder, timestamp, surface, daytime, args.basepath, needsThumbnail, args)
 
                             if jindex == len(latest) - 1:
-                                print("zooming renderboxes", timestamp)
+                                print(f"zooming renderboxes {timestamp}")
                                 zoomRenderboxes(daytimeSurfaces, workfolder, timestamp, Path(args.basepath, firstOutFolder, "Images"), args)
 
                         if screenshot != latest[-1]:

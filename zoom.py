@@ -1,11 +1,9 @@
 import json
-import math
 import multiprocessing as mp
 from argparse import Namespace
 import os
 from pathlib import Path
-from shutil import get_terminal_size as tsize
-from sys import platform as _platform
+from print import print, printProgress
 
 import numpy
 import psutil
@@ -26,14 +24,6 @@ THUMBNAILSCALE = 2
 
 MINRENDERBOXSIZE = 8
 
-
-def printErase(arg):
-    try:
-        tsiz = tsize()[0]
-        print("\r{}{}\n".format(arg, " " * (tsiz*math.ceil(len(arg)/tsiz)-len(arg) - 1)), end="", flush=True)
-    except:
-        #raise
-        pass
 
 
 # note that these are all 64 bit libraries since factorio doesnt support 32 bit.
@@ -291,8 +281,7 @@ def zoom(
                     for daytime in daytimes:
                         if daytimeReference is None or daytime == daytimeReference:
                             if not Path(topPath, "Images", str(map["path"]), surfaceName, daytime, str(maxzoom - 1)).is_dir():
-
-                                print(f"zoom {0:5.1f}% [{' ' * (tsize()[0]-15)}]", end="")
+                                printProgress("zoom", 0)
 
                                 generateThumbnail = (
                                     needsThumbnail
@@ -384,16 +373,7 @@ def zoom(
                                 for _ in range(originalSize):
                                     resultQueue.get(True)
                                     doneSize += 1
-                                    progress = float(doneSize) / originalSize
-                                    tsiz = tsize()[0] - 15
-                                    print(
-                                        "\rzoom {:5.1f}% [{}{}]".format(
-                                            round(progress * 98, 1),
-                                            "=" * int(progress * tsiz),
-                                            " " * (tsiz - int(progress * tsiz)),
-                                        ),
-                                        end="",
-                                    )
+                                    printProgress("zoom", float(doneSize) / originalSize * 0.98)
 
                                 for p in processes:
                                     p.join()
@@ -425,7 +405,7 @@ def zoom(
                                         p.join()
 
                                 if generateThumbnail:
-                                    printErase("generating thumbnail")
+                                    print("generating thumbnail")
                                     minzoompath = Path(
                                         imagePath,
                                         str(map["path"]),
@@ -466,4 +446,4 @@ def zoom(
 
                                     thumbnail.save(Path(imagePath, "thumbnail" + THUMBNAILEXT))
 
-                                print("\rzoom {:5.1f}% [{}]".format(100, "=" * (tsize()[0] - 15)))
+                                printProgress("zoom", 1, True)

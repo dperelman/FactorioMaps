@@ -4,8 +4,8 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageStat
 import multiprocessing as mp
 from functools import partial
-from shutil import get_terminal_size as tsize
 import traceback
+from print import print, printProgress
 
 
 
@@ -247,31 +247,29 @@ def ref(
             #compare(compareList[0], treshold=treshold, basePath=os.path.join(topPath, "Images"), new=str(newMap["path"]), progressQueue=progressQueue)
             workers = pool.map_async(partial(compare, basePath=os.path.join(topPath, "Images"), new=str(newMap["path"]), progressQueue=progressQueue), compareList, 128)
             doneSize = 0
-            print("ref  {:5.1f}% [{}]".format(0, " " * (tsize()[0]-15)), end="")
+            printProgress("ref", 0)
             for i in range(len(compareList)):
                 progressQueue.get(True)
                 doneSize += 1
-                progress = float(doneSize) / len(compareList)
-                tsiz = tsize()[0]-15
-                print("\rref  {:5.1f}% [{}{}]".format(round(progress * 100, 1), "=" * int(progress * tsiz), " " * (tsiz - int(progress * tsiz))), end="")
+                printProgress("ref", float(doneSize) / len(compareList))
             workers.wait()
             resultList = workers.get()
 
             newList = [x[1] for x in [x for x in resultList if x[0]]]
             firstRemoveList += [x[1] for x in [x for x in resultList if not x[0]]]
-            if args.verbose: print("found %s changed in %s images" % (len(newList), len(compareList)))
+            if args.verbose: print(f"found {len(newList)} changed in {len(compareList)} images")
             keepList += newList
-            print("\rref  {:5.1f}% [{}]".format(100, "=" * (tsize()[0]-15)))
+            printProgress("ref", 1, True)
 
 
-        if args.verbose: print("scanning %s chunks for neighbour cropping" % len(firstRemoveList))
+        if args.verbose: print(f"scanning {len(firstRemoveList)} chunks for neighbour cropping")
         resultList = pool.map(partial(neighbourScan, keepList=keepList, cropList=cropList), firstRemoveList, 64)
         neighbourList = [x[1] for x in [x for x in resultList if x[0]]]
         removeList = [x[1] for x in [x for x in resultList if not x[0]]]
-        if args.verbose: print("keeping %s neighbouring images" % len(neighbourList))
+        if args.verbose: print(f"keeping {len(neighbourList)} neighbouring images")
 
 
-        if args.verbose: print("deleting %s, keeping %s of %s existing images" % (len(removeList), len(keepList) + len(neighbourList), len(keepList) + len(neighbourList) + len(removeList)))
+        if args.verbose: print(f"deleting {len(removeList)}, keeping {len(keepList)  + len(neighbourList)} of {len(keepList) + len(neighbourList) + len(removeList)} existing images")
 
 
         if args.verbose: print("removing identical images")
@@ -363,7 +361,7 @@ def ref(
                 else:
                     count += 1
 
-            if args.verbose: print("removed %s of %s compared renderboxes, found %s new" % (count, len(compareList), totalCount))
+            if args.verbose: print(f"removed {count} of {len(compareList)} compared renderboxes, found {totalCount} new")
 
 
 
