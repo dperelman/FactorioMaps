@@ -3,6 +3,7 @@ import multiprocessing as mp
 from argparse import Namespace
 import os
 from pathlib import Path
+import re
 from print import print, printProgress
 
 import numpy
@@ -10,19 +11,25 @@ import psutil
 from PIL import Image
 from turbojpeg import TurboJPEG
 
-maxQuality = False  		# Set this to true if you want to compress/postprocess the images yourself later
+MAX_QUALITY = False  		# Set this to true if you want to compress/postprocess the images yourself later
 
-quality = 80
+QUALITY = 80
+BG_QUALITY = 95
 
 EXT = ".png"
-OUTEXT = ".jpg"     		# format='JPEG' is hardcoded in places, meed to modify those, too. Most parameters are not supported outside jpeg.
-THUMBNAILEXT = ".png"
+OUT_EXT = ".jpg"     		# format='JPEG' is hardcoded in places, meed to modify those, too. Most parameters are not supported outside jpeg.
+THUMBNAIL_EXT = ".png"
+BG_EXT = ".png"
 
-BACKGROUNDCOLOR = (27, 45, 51)
-THUMBNAILSCALE = 2
+BACKGROUND_COLOR = (27, 45, 51)
+THUMBNAIL_SCALE = 2
 
-MINRENDERBOXSIZE = 8
+MIN_RENDERBOX_SIZE = 8
 
+
+BG_IN_SIZE = 512
+CHUNKS_PER_BG = 8
+BG_OUT_SIZE = CHUNKS_PER_BG * 32 // 2 # 0.5 pixels per tile
 
 
 # note that these are all 64 bit libraries since factorio doesnt support 32 bit.
@@ -35,7 +42,7 @@ else:
 
 
 def saveCompress(img, path: Path):
-    if maxQuality:  # do not waste any time compressing the image
+    if MAX_QUALITY:  # do not waste any time compressing the image
         return img.save(path, subsampling=0, quality=100)
 
     outFile = path.open("wb")
@@ -47,17 +54,17 @@ def simpleZoom(workQueue):
     for (folder, start, stop, filename) in workQueue:
         path = Path(folder, str(start), filename)
         img = Image.open(path.with_suffix(EXT), mode="r").convert("RGB")
-        if OUTEXT != EXT:
-            saveCompress(img, path.with_suffix(OUTEXT))
+        if OUT_EXT != EXT:
+            saveCompress(img, path.with_suffix(OUT_EXT))
             path.with_suffix(EXT).unlink()
 
         for z in range(start - 1, stop - 1, -1):
-            if img.size[0] >= MINRENDERBOXSIZE * 2 and img.size[1] >= MINRENDERBOXSIZE * 2:
+            if img.size[0] >= MIN_RENDERBOX_SIZE * 2 and img.size[1] >= MIN_RENDERBOX_SIZE * 2:
                 img = img.resize((img.size[0] // 2, img.size[1] // 2), Image.Resampling.LANCZOS)
             zFolder = Path(folder, str(z))
             if not zFolder.exists():
                 zFolder.mkdir(parents=True)
-            saveCompress(img, Path(zFolder, filename).with_suffix(OUTEXT))
+            saveCompress(img, Path(zFolder, filename).with_suffix(OUT_EXT))
 
 
 def zoomRenderboxes(daytimeSurfaces, toppath, timestamp, subpath, args):
@@ -188,11 +195,11 @@ def work(basepath, pathList, surfaceName, daytime, size, start, stop, last, chun
                             isOriginal.append(paths[m].is_file())
                             if not isOriginal[m]:
                                 for n in range(1, len(pathList)):
-                                    paths[m] = Path(basepath, pathList[n], surfaceName, daytime, str(k), str(i + coords[m][0]), str(j + coords[m][1])).with_suffix(OUTEXT)
+                                    paths[m] = Path(basepath, pathList[n], surfaceName, daytime, str(k), str(i + coords[m][0]), str(j + coords[m][1])).with_suffix(OUT_EXT)
                                     if paths[m].is_file():
                                         break
 
-                        result = Image.new("RGB", (size, size), BACKGROUNDCOLOR)
+                        result = Image.new("RGB", (size, size), BACKGROUND_COLOR)
 
                         images = []
                         for m in range(len(coords)):
@@ -212,20 +219,20 @@ def work(basepath, pathList, surfaceName, daytime, size, start, stop, last, chun
                                     images.append((img, paths[m]))
 
                         if k == last + 1:
-                            saveCompress(result, Path(basepath, pathList[0], surfaceName, daytime, str(k - 1), str(i // 2), str(j // 2)).with_suffix(OUTEXT))
-                        if OUTEXT != EXT and (k != last + 1 or keepLast):
+                            saveCompress(result, Path(basepath, pathList[0], surfaceName, daytime, str(k - 1), str(i // 2), str(j // 2)).with_suffix(OUT_EXT))
+                        if OUT_EXT != EXT and (k != last + 1 or keepLast):
                             result.save(Path(basepath, pathList[0], surfaceName, daytime, str(k - 1), str(i // 2), str(j // 2), ).with_suffix(EXT))
 
-                        if OUTEXT != EXT:
+                        if OUT_EXT != EXT:
                             for img, path in images:
-                                saveCompress(img, path.with_suffix(OUTEXT))
+                                saveCompress(img, path.with_suffix(OUT_EXT))
                                 path.unlink()
 
             chunksize = chunksize // 2
     elif stop == last:
         path = Path(basepath, pathList[0], surfaceName, daytime, str(start), str(chunk[0]), str(chunk[1]))
         img = Image.open(path.with_suffix(EXT), mode="r").convert("RGB")
-        saveCompress(img, path.with_suffix(OUTEXT))
+        saveCompress(img, path.with_suffix(OUT_EXT))
         path.with_suffix(EXT).unlink()
 
 
@@ -422,7 +429,7 @@ def zoom(
                                             (maxX - minX + 1) * imageSize >> maxzoom-minzoom,
                                             (maxY - minY + 1) * imageSize >> maxzoom-minzoom,
                                         ),
-                                        BACKGROUNDCOLOR,
+                                        BACKGROUND_COLOR,
                                     )
                                     bigMinX = minX >> maxzoom-minzoom
                                     bigMinY = minY >> maxzoom-minzoom
@@ -440,9 +447,51 @@ def zoom(
                                             .resize((imageSize, imageSize), Image.Resampling.LANCZOS),
                                         )
 
-                                        if OUTEXT != EXT:
+                                        if OUT_EXT != EXT:
                                             path.unlink()
 
-                                    thumbnail.save(Path(imagePath, "thumbnail" + THUMBNAILEXT))
+                                    thumbnail.save(Path(imagePath, "thumbnail" + THUMBNAIL_EXT))
 
                                 printProgress("zoom", 1, True)
+
+
+
+                            # TODO: MULTITHREAD THIS
+                            printProgress("bg", 0)
+
+                            bgImages = {}
+                            for xStr in Path(imagePath, str(map["path"]), surfaceName, daytime, "bg").iterdir():
+                                x = int(xStr.name)
+                                for yStr in Path(imagePath, str(map["path"]), surfaceName, daytime, str(maxzoom), xStr).iterdir():
+                                    m = re.match(r'^(-?\d+)_(\d+)_(\d+)$', yStr.stem, re.IGNORECASE)
+                                    assert(m)
+                                    y = int(m.group(1))
+                                    subX = int(m.group(2))
+                                    subY = int(m.group(3))
+
+                                    key = (x, y)
+                                    if key not in bgImages:
+                                        bgImages[key] = []
+                                    bgImages[key].append((subX, subY))
+
+                            doneCount = 0
+                            for key, subImages in bgImages.items():
+                                result = Image.new("RGB", (BG_IN_SIZE * CHUNKS_PER_BG, BG_IN_SIZE * CHUNKS_PER_BG), BACKGROUND_COLOR)
+                                for subX, subY in subImages:
+                                    path = Path(imagePath, str(map["path"]), surfaceName, daytime, "bg", str(key[0]), f"{key[1]}_{subX}_{subY}{EXT}")
+                                    img = Image.open(path, mode="r").convert("RGB")
+                                    result.paste(
+                                        box=(
+                                            subX * BG_IN_SIZE,
+                                            subY * BG_IN_SIZE,
+                                        ),
+                                        im=img,
+                                    )
+                                    path.unlink()
+
+                                result = result.resize((BG_OUT_SIZE, BG_OUT_SIZE), Image.Resampling.LANCZOS)
+                                result.save(Path(imagePath, str(map["path"]), surfaceName, daytime, "bg", f"{key[0]}/{key[1]}{BG_EXT}"))
+
+                                doneCount += 1
+                                printProgress("bg", float(doneCount) / len(bgImages))
+                            printProgress("bg", 1, True)

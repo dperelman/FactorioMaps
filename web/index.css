@@ -163,9 +163,8 @@ hr.clear {
 }
 
 .leaflet-overlay-pane > img,
-img.leaflet-tile.leaflet-tile-loaded {
+.map-layer img.leaflet-tile.leaflet-tile-loaded {
 	image-rendering: pixelated;
-	image-rendering: crisp-edges;
 }
 
 

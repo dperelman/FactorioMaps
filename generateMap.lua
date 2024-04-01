@@ -76,6 +76,8 @@ function fm.generateMap(data)
 	local gridPixelSize = gridSize / pixelsPerTile
 
 
+	local chunksPerBg = 8 -- match wich zoom.py
+
 
 
 	if fm.tilenames == nil then
@@ -698,7 +700,7 @@ function fm.generateMap(data)
 			capture({
 				surface = fm.currentSurface,
 				position = { chunk.area.left_top, chunk.area.right_bottom },
-				path = fm.currentSurface.name .. "/" .. fm.autorun.daytime .. "/bg/" .. chunk.x .. "/" .. chunk.y,
+				path = fm.currentSurface.name .. "/" .. fm.autorun.daytime .. "/bg/" .. math.floor(chunk.x / chunksPerBg) .. "/" .. math.floor(chunk.y / chunksPerBg) .. "_" .. chunk.x % chunksPerBg .. "_" .. chunk.y % chunksPerBg,
 				small = true
 			})
 		end

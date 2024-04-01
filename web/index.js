@@ -1,6 +1,7 @@
 "use strict";
 let DEBUG = false;
 const EXT = ".jpg";
+const BG_EXT = ".png";
 
 
 
@@ -12,12 +13,17 @@ let COORDSCALE = 2**19 / 16 * window.devicePixelRatio;
 //L.TileLayer.prototype.getTileUrl = function(coords) { return _getTileUrl.call(this, {x: coords.x - 1 * Math.pow(2, coords.z - 2), y: coords.y, z: coords.z}); };
 
 L.TileLayer.prototype.getTileUrl = function(c) {
+	if (this.bg)
+		return `Images/${this.path}/${this.surface}/${this.daytime}/bg/${c.x}/${c.y}${BG_EXT}`
+
 	let mapIndex = this.tileIndex[c.z] && this.tileIndex[c.z][c.y] && this.tileIndex[c.z][c.y][c.x];
 	if (isNaN(mapIndex))
 		mapIndex = this.tileIndex.fallback;
-	if (isNaN(mapIndex))
-		return "";
-	return "Images/" + mapInfo.maps[mapIndex].path + "/" + this.surface + "/" + this.daytime + "/" + c.z + "/" + c.x + "/" + c.y + EXT;
+	if (!this.bg) {
+		if (isNaN(mapIndex))
+			return "";
+	}
+	return `Images/${mapInfo.maps[mapIndex].path}/${this.surface}/${this.daytime}/${this.bg ? "bg" : c.z}/${c.x}/${c.y}${this.bg ? BG_EXT : EXT}`
 }
 
 //TODO: iterate over surfaces
@@ -218,6 +224,21 @@ for (let i = 0; i < mapInfo.maps.length; i++) {
 				let maxZoom = layer.zoom.max + maxZoomExtra;
 				if (!(maxZoom <= globalMaxZoom))
 					globalMaxZoom = maxZoom;
+
+				let LBGLayer = L.tileLayer(undefined, {
+					id: `${layer.path}-bg`,
+					attribution: '<a href="https://github.com/L0laapk3/FactorioMaps">FactorioMaps</a>',
+					minZoom: 14,
+					maxZoom: 23,
+					minNativeZoom: 14,
+					maxNativeZoom: 14,
+					noWrap: true,
+					tileSize: 128 / window.devicePixelRatio,
+					keepBuffer: 99,
+					zIndex: 1,
+					className: "bg-layer",
+				});
+				LBGLayer.bg = true;
 				let LLayer = L.tileLayer(undefined, {
 					id: layer.path,
 					attribution: '<a href="https://github.com/L0laapk3/FactorioMaps">FactorioMaps</a>',
@@ -227,15 +248,20 @@ for (let i = 0; i < mapInfo.maps.length; i++) {
 					maxZoom: maxZoom + maxZOffset,
 					noWrap: true,
 					tileSize: 512 / window.devicePixelRatio,
-					keepBuffer: 99
+					keepBuffer: 99,
+					zIndex: 2,
+					className: "map-layer",
 				});
-				LLayer.surface = surface;
-				LLayer.daytime = daytime;
-				LLayer.path = map.path;
-				LLayer.tileIndex = daytime == "day" ? tileIndex : tileNightIndex;
+				LLayer.bg = false;
+
+				LBGLayer.surface   = LLayer.surface   = surface;
+				LBGLayer.daytime   = LLayer.daytime   = daytime;
+				LBGLayer.path      = LLayer.path      = map.path;
+				LBGLayer.tileIndex = LLayer.tileIndex = daytime == "day" ? tileIndex : tileNightIndex;
 
 
-				map.surfaces[surface].layers[daytime] = layersByTimestamp[i][surface][daytime] = layers[surface][i][daytime] = LLayer;
+
+				map.surfaces[surface].layers[daytime] = layersByTimestamp[i][surface][daytime] = layers[surface][i][daytime] = [ LBGLayer, LLayer ];
 			}
 		});
 
@@ -513,7 +539,7 @@ if (Object.values(layers).some(s => Object.values(s).some(l => l.day)) && Object
 			{
 				name: "Day",
 				position: 0,
-				layers: Object.values(layers).map(s => Object.values(s).map(l => l.day)).flat()
+				layers: Object.values(layers).map(s => Object.values(s).map(l => l.day)).flat().flat()
 			},
 			{
 				name: "Nightvision",
@@ -523,7 +549,7 @@ if (Object.values(layers).some(s => Object.values(s).some(l => l.day)) && Object
 			{
 				name: "Night",
 				position: 1,
-				layers: Object.values(layers).map(s => Object.values(s).map(l => l.night)).flat()
+				layers: Object.values(layers).map(s => Object.values(s).map(l => l.night)).flat().flat()
 			}
 		],
 		onChange: function(value) {
@@ -551,7 +577,7 @@ if (layersByTimestamp.length > 1 && true) {
 		return {
 			name: mapInfo.maps[i].path + "h",
 			position: max == min || layersByTimestamp.length * 30/sliderHeight > 1 ? i / (layersByTimestamp.length - 1) : i * 30/sliderHeight + (parseInt(mapInfo.maps[i].path) - min) / (max - min) * (1 - (layersByTimestamp.length - 1) * 30/sliderHeight),
-			layers: Object.values(layer).map(s => ["day", "night"].map(n => s[n]).filter(l => l)).flat()
+			layers: Object.values(layer).map(s => ["day", "night"].map(n => s[n]).filter(l => l)).flat().flat()
 		}
 	});
 
@@ -640,7 +666,8 @@ if (surfaceKeys.length > 1) {
 
 
 if (!mapLoadedBySlider)
-	map.addLayer(loadLayer.day || loadLayer.night);
+	for (let l of loadLayer.day || loadLayer.night)
+		map.addLayer(l);
 map.addControl(new L.Control.FullScreen().setPosition('bottomright'));
 map.zoomControl.setPosition('bottomleft')
 
