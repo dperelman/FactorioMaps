@@ -186,6 +186,11 @@ script.on_event(defines.events.on_tick, function(event)
 				entity.destroy()
 			end
 
+			-- remove characters. TODO: This should probably be optional. Also maybe try to add an option to display offline characters?
+			for key, entity in pairs(fm.currentSurface.find_entities_filtered({type="character"})) do
+				entity.destroy()
+			end
+
 			--spawn a bunch of hidden energy sources on lamps
 			for _, t in pairs(fm.currentSurface.find_entities_filtered{type="lamp"}) do
 				local control = t.get_control_behavior()
