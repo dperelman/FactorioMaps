@@ -552,6 +552,7 @@ if (layersByTimestamp.length > 1 && true) {
 	let min = Math.min.apply(undefined, mapInfo.maps.map(l => parseInt(l.path)));
 	let max = Math.max.apply(undefined, mapInfo.maps.map(l => parseInt(l.path)));
 	let sliderHeight = Math.min(window.innerHeight * .8, Math.max(95, 45 * (layersByTimestamp.length - 1)));
+	let lastSaveDate = null;
 	let timeLabels = layersByTimestamp.map(function(layer, i) {
 		const tick = mapInfo.maps[i].tick
 		const totalSeconds = tick/60
@@ -559,7 +560,14 @@ if (layersByTimestamp.length > 1 && true) {
 		const totalHours = Math.floor(totalMinutes/60)
 		const minutes = Math.floor(totalMinutes % 60).toString().padStart(2, "0")
 
-		const name = totalHours + ":" + minutes;
+		const saveDate = new Date(mapInfo.maps[i].save_mtime).toDateString();
+		let namePrefix = "";
+		if (!lastSaveDate || lastSaveDate !== saveDate) {
+			namePrefix += "[" + saveDate + "] ";
+			lastSaveDate = saveDate;
+		}
+
+		const name = namePrefix + totalHours + ":" + minutes;
 		const path = mapInfo.maps[i].path;
 		return {
 			path,
