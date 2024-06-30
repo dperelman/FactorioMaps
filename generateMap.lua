@@ -463,6 +463,18 @@ function fm.generateMap(data)
 
 	if mapIndex == 0 then
 
+		local playerInfo = {}
+		for idx, player in pairs(game.players) do
+			playerInfo[idx] = {
+				name = player.name,
+				color = player.color,
+				surface = player.surface.name,
+				position = player.position,
+				last_online = player.last_online,
+				online_time = player.online_time,
+			}
+		end
+
 		mapIndex = #fm.autorun.mapInfo.maps + 1
 		fm.autorun.mapInfo.maps[mapIndex] = {
 			tick = fm.autorun.tick,
@@ -471,6 +483,7 @@ function fm.generateMap(data)
 			save_path = fm.autorun.save_path,
 			save_mtime = fm.autorun.save_mtime,
 			mods = game.active_mods,
+			players = playerInfo,
 			surfaces = {}
 		}
 
