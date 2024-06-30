@@ -287,7 +287,7 @@ AUTORUN_PATH = Path(__file__, "..", "autorun.lua").resolve()
 def clearAutorun():
     AUTORUN_PATH.open('w', encoding="utf-8").close()
 
-def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstSnapshot: bool, daytime: str):
+def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstSnapshot: bool, daytime: str, savePath, saveMTime):
     printErase("Building autorun.lua")
     mapInfoLua = convertJSONFileToLua(Path(workFolder, "mapInfo.json"))
 
@@ -313,6 +313,8 @@ def buildAutorun(args: Namespace, workFolder: Path, outFolder: Path, isFirstSnap
             date = "{datetime.datetime.strptime(args.date, "%d/%m/%y").strftime("%d/%m/%y")}",
             surfaces = {surfaceString},
             name = "{str(outFolder) + "/"}",
+            save_path = "{str(savePath)}",
+            save_mtime = "{saveMTime}",
             mapInfo = {mapInfoLua},
             chunkCache = {chunkCache}
             }}'''
@@ -547,13 +549,16 @@ def auto(*args):
         	daytimes.append("night")
 
         for index, savename in () if args.dry else enumerate(saveGames):
+            savePath = Path(userFolder, 'saves', *(savename.split('/'))).absolute()
+            saveMTime = datetime.datetime.fromtimestamp(os.path.getmtime(savePath)).isoformat()
+
             for daytimeIndex, setDaytime in enumerate(daytimes):
 
                 printErase("cleaning up")
                 if datapath.is_file():
                     datapath.unlink()
 
-                buildAutorun(args, workfolder, foldername, isFirstSnapshot, setDaytime)
+                buildAutorun(args, workfolder, foldername, isFirstSnapshot, setDaytime, savePath, saveMTime)
                 isFirstSnapshot = False
 
                 if args.temp_dir is not None:
@@ -571,7 +576,7 @@ def auto(*args):
 
                     launchArgs = [
                         '--load-game',
-                        str(Path(userFolder, 'saves', *(savename.split('/'))).absolute()),
+                        str(savePath),
                         '--disable-audio',
                         '--config',
                         str(configPath),

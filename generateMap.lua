@@ -468,6 +468,8 @@ function fm.generateMap(data)
 			tick = fm.autorun.tick,
 			path = fm.autorun.filePath,
 			date = fm.autorun.date,
+			save_path = fm.autorun.save_path,
+			save_mtime = fm.autorun.save_mtime,
 			mods = game.active_mods,
 			surfaces = {}
 		}
