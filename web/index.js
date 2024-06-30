@@ -549,9 +549,14 @@ if (Object.values(layers).some(s => Object.values(s).some(l => l.day)) && Object
 
 
 if (layersByTimestamp.length > 1 && true) {
-	let min = Math.min.apply(undefined, mapInfo.maps.map(l => parseInt(l.path)));
-	let max = Math.max.apply(undefined, mapInfo.maps.map(l => parseInt(l.path)));
-	let sliderHeight = Math.min(window.innerHeight * .8, Math.max(95, 45 * (layersByTimestamp.length - 1)));
+	let min = Math.min.apply(undefined, mapInfo.maps.map(l => l.tick));
+	let max = Math.max.apply(undefined, mapInfo.maps.map(l => l.tick));
+	let sliderHeight = Math.max(95, 45 * (layersByTimestamp.length - 1));
+	// If too tall, make as compact as possible.
+	const oversizeFactor = sliderHeight / (window.innerHeight * 0.8);
+	if (oversizeFactor > 1) {
+		sliderHeight /= Math.min(3, oversizeFactor);
+	}
 	let lastSaveDate = null;
 	let timeLabels = layersByTimestamp.map(function(layer, i) {
 		const tick = mapInfo.maps[i].tick
@@ -572,7 +577,9 @@ if (layersByTimestamp.length > 1 && true) {
 		return {
 			path,
 			name,
-			position: max == min || layersByTimestamp.length * 30/sliderHeight > 1 ? i / (layersByTimestamp.length - 1) : i * 30/sliderHeight + (parseInt(mapInfo.maps[i].path) - min) / (max - min) * (1 - (layersByTimestamp.length - 1) * 30/sliderHeight),
+			position: max == min || layersByTimestamp.length * 30/sliderHeight > 1
+				? i / (layersByTimestamp.length - 1)
+				: i * 30/sliderHeight + (mapInfo.maps[i].tick - min) / (max - min) * (1 - (layersByTimestamp.length - 1) * 30/sliderHeight),
 			layers: Object.values(layer).map(s => ["day", "night"].map(n => s[n]).filter(l => l)).flat()
 		}
 	});
@@ -654,11 +661,15 @@ if (surfaceKeys.length > 1) {
 	});
 	map.addControl(surfaceSlider);
 	if (!timeSlider)
-		$(surfaceSlider._container).attr("style", "float: right !important");
+		surfaceSlider._container.style.float = "right !important";
 
 	mapLoadedBySlider = true;
-} else if (timeSlider)
-	$(timeSlider._container).attr("style", "float: right !important");
+} else if (timeSlider) {
+	timeSlider._container.style.float = "right !important";
+}
+
+timeSlider._container.style["max-height"] = "94vw";
+timeSlider._container.style["overflow-y"] = "scroll";
 
 
 
