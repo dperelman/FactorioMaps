@@ -552,10 +552,12 @@ if (layersByTimestamp.length > 1 && true) {
 	let min = Math.min.apply(undefined, mapInfo.maps.map(l => l.tick));
 	let max = Math.max.apply(undefined, mapInfo.maps.map(l => l.tick));
 	let sliderHeight = Math.max(95, 45 * (layersByTimestamp.length - 1));
+	let minSpacing = 30/sliderHeight;
 	// If too tall, make as compact as possible.
 	const oversizeFactor = sliderHeight / (window.innerHeight * 0.8);
 	if (oversizeFactor > 1) {
-		sliderHeight /= Math.min(3, oversizeFactor);
+		sliderHeight /= Math.min(2, oversizeFactor);
+		minSpacing = 15/sliderHeight;
 	}
 	let lastSaveDate = null;
 	let timeLabels = layersByTimestamp.map(function(layer, i) {
@@ -577,9 +579,9 @@ if (layersByTimestamp.length > 1 && true) {
 		return {
 			path,
 			name,
-			position: max == min || layersByTimestamp.length * 30/sliderHeight > 1
+			position: max == min || layersByTimestamp.length * minSpacing > 1
 				? i / (layersByTimestamp.length - 1)
-				: i * 30/sliderHeight + (mapInfo.maps[i].tick - min) / (max - min) * (1 - (layersByTimestamp.length - 1) * 30/sliderHeight),
+				: i * minSpacing + (mapInfo.maps[i].tick - min) / (max - min) * (1 - (layersByTimestamp.length - 1) * minSpacing),
 			layers: Object.values(layer).map(s => ["day", "night"].map(n => s[n]).filter(l => l)).flat()
 		}
 	});
