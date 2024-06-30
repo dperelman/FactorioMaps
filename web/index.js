@@ -553,8 +553,17 @@ if (layersByTimestamp.length > 1 && true) {
 	let max = Math.max.apply(undefined, mapInfo.maps.map(l => parseInt(l.path)));
 	let sliderHeight = Math.min(window.innerHeight * .8, Math.max(95, 45 * (layersByTimestamp.length - 1)));
 	let timeLabels = layersByTimestamp.map(function(layer, i) {
+		const tick = mapInfo.maps[i].tick
+		const totalSeconds = tick/60
+		const totalMinutes = totalSeconds/60
+		const totalHours = Math.floor(totalMinutes/60)
+		const minutes = Math.floor(totalMinutes % 60).toString().padStart(2, "0")
+
+		const name = totalHours + ":" + minutes;
+		const path = mapInfo.maps[i].path;
 		return {
-			name: mapInfo.maps[i].path + "h",
+			path,
+			name,
 			position: max == min || layersByTimestamp.length * 30/sliderHeight > 1 ? i / (layersByTimestamp.length - 1) : i * 30/sliderHeight + (parseInt(mapInfo.maps[i].path) - min) / (max - min) * (1 - (layersByTimestamp.length - 1) * 30/sliderHeight),
 			layers: Object.values(layer).map(s => ["day", "night"].map(n => s[n]).filter(l => l)).flat()
 		}
@@ -564,19 +573,20 @@ if (layersByTimestamp.length > 1 && true) {
 
 	let initialTime;
 	for (let i = 0; i < timeLabels.length; i++) {
-		if (parseFloat(timestamp) < parseInt(timeLabels[i].name)) {
+		const labelPath = timeLabels[i].path;
+		if (parseFloat(timestamp) < parseInt(labelPath)) {
 			if (!i)
 				initialTime = timeLabels[i].position;
 			else
-				initialTime = timeLabels[i].position - (timeLabels[i].position - timeLabels[i-1].position) * (parseInt(timeLabels[i].name) - parseFloat(timestamp)) / (parseInt(timeLabels[i].name) - parseInt(timeLabels[i-1].name));
+				initialTime = timeLabels[i].position - (timeLabels[i].position - timeLabels[i-1].position) * (parseInt(labelPath) - parseFloat(timestamp)) / (parseInt(labelPath) - parseInt(timeLabels[i-1].name));
 			break;
-		} else if (parseFloat(timestamp) == parseInt(timeLabels[i].name)) {
-			let diff = parseInt(timeLabels[i].name.split("-")[1] || 0) - parseFloat(timestamp.split("-")[1] || 0);
+		} else if (parseFloat(timestamp) == parseInt(labelPath)) {
+			let diff = parseInt(labelPath.split("-")[1] || 0) - parseFloat(timestamp.split("-")[1] || 0);
 			if (diff == 0) {
 				initialTime = timeLabels[i].position;
 				break;
 			} else if (diff > 0) {
-				initialTime = timeLabels[i].position - (timeLabels[i].position - timeLabels[i-1].position) * diff / (parseInt(timeLabels[i].name.split("-")[1] || 0) - parseInt(timeLabels[i-1].name.split("-")[1] || 0));
+				initialTime = timeLabels[i].position - (timeLabels[i].position - timeLabels[i-1].position) * diff / (parseInt(labelPath.split("-")[1] || 0) - parseInt(timeLabels[i-1].path.split("-")[1] || 0));
 				break;
 			}
 		}
@@ -593,10 +603,10 @@ if (layersByTimestamp.length > 1 && true) {
 		labels: timeLabels,
 		onChange: function(value, localValue, below, above) {
 			if (!above)
-				timestamp = below.name.slice(0, -1);
+				timestamp = below.path;
 			else {
-				let one = below.name.slice(0, -1).split("-");
-				let two = above.name.slice(0, -1).split("-");
+				let one = below.path.split("-");
+				let two = above.path.split("-");
 				if (one[0] == two[0])
 					timestamp = one[0] + "-" + Math.round(((parseInt(one[1]) || 0) + localValue * ((parseInt(two[1]) || 0) - (parseInt(one[1]) || 0))) * 100) / 100;
 				else
