@@ -449,9 +449,14 @@ try {
 		window.location.reload();
 }
 if (isNaN(startX) || isNaN(startY)) {
-	let spawn = mapInfo.maps.find(m => m.path == timestamp).surfaces[currentSurface].spawn;
-	startX = -spawn.y / 2**(startZ-1);
-	startY = spawn.x / 2**(startZ-1);
+	const selectedMap = mapInfo.maps.find(m => m.path == timestamp);
+	if (selectedMap) {
+		let spawn = mapInfo.maps.find(m => m.path == timestamp).surfaces[currentSurface].spawn;
+		startX = -spawn.y / 2**(startZ-1);
+		startY = spawn.x / 2**(startZ-1);
+	} else {
+		startX = startY = 0;
+	}
 }
 
 
