@@ -670,6 +670,13 @@ if (surfaceKeys.length > 1) {
 
 timeSlider._container.style["max-height"] = "94vw";
 timeSlider._container.style["overflow-y"] = "scroll";
+timeSlider._container.addEventListener("wheel", ev => {
+	// From https://stackoverflow.com/a/4814526: checks if there's scrollbar...
+	if (timeSlider._container.scrollHeight > timeSlider._container.clientHeight) {
+		// ... if so, mouse wheel should scroll that.
+		ev.stopPropagation();
+	}
+});
 
 
 
