@@ -449,7 +449,7 @@ try {
 		window.location.reload();
 }
 if (isNaN(startX) || isNaN(startY)) {
-	let spawn = mapInfo.maps.find(m => m.path == timestamp).surfaces[currentSurface].spawn;
+	let spawn = mapInfo.maps.find(m => m.tick == timestamp).surfaces[currentSurface].spawn;
 	startX = -spawn.y / 2**(startZ-1);
 	startY = spawn.x / 2**(startZ-1);
 }
@@ -548,7 +548,14 @@ if (layersByTimestamp.length > 1 && true) {
 	let max = Math.max.apply(undefined, mapInfo.maps.map(l => parseInt(l.path)));
 	let sliderHeight = Math.min(window.innerHeight * .8, Math.max(95, 45 * (layersByTimestamp.length - 1)));
 	let timeLabels = layersByTimestamp.map(function(layer, i) {
+		const tick = mapInfo.maps[i].tick
+		const totalSeconds = tick/60
+		const totalMinutes = totalSeconds/60
+		const totalHours = Math.floor(totalMinutes/60)
+		const minutes = Math.floor(totalMinutes % 60).toString().padStart(2, "0")
+		const seconds = Math.floor(totalSeconds % 60).toString().padStart(2, "0")
 		return {
+			timeSinceStart: totalHours + ":" + minutes + ":" + seconds,
 			name: mapInfo.maps[i].path + "h",
 			position: max == min || layersByTimestamp.length * 30/sliderHeight > 1 ? i / (layersByTimestamp.length - 1) : i * 30/sliderHeight + (parseInt(mapInfo.maps[i].path) - min) / (max - min) * (1 - (layersByTimestamp.length - 1) * 30/sliderHeight),
 			layers: Object.values(layer).map(s => ["day", "night"].map(n => s[n]).filter(l => l)).flat()
